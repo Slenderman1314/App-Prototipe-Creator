@@ -1,0 +1,75 @@
+package app.prototype.creator.data.repository
+
+import app.prototype.creator.data.model.Prototype
+import app.prototype.creator.data.supabase.SupabaseClient
+import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.flow
+
+class SupabasePrototypeRepository(private val supabaseClient: SupabaseClient) : PrototypeRepository {
+    
+    override fun getPrototypes(): Flow<List<Prototype>> = flow {
+        try {
+            val prototypes = supabaseClient.client
+                .from("prototypes")
+                .select()
+                .order("updated_at", ascending = false)
+                .decodeList<Prototype>()
+            
+            emit(prototypes)
+        } catch (e: Exception) {
+            // Handle error
+            throw e
+        }
+    }
+    
+    override fun getPrototypeById(id: String): Flow<Prototype> = flow {
+        try {
+            val prototype = supabaseClient.client
+                .from("prototypes")
+                .select()
+                .eq("id", id)
+                .single()
+                .decodeSingle<Prototype>()
+            
+            emit(prototype)
+        } catch (e: Exception) {
+            // Handle error
+            throw e
+        }
+    }
+    
+    override suspend fun createPrototype(prototype: Prototype) {
+        try {
+            supabaseClient.client
+                .from("prototypes")
+                .insert(prototype)
+        } catch (e: Exception) {
+            // Handle error
+            throw e
+        }
+    }
+    
+    override suspend fun updatePrototype(prototype: Prototype) {
+        try {
+            supabaseClient.client
+                .from("prototypes")
+                .update(prototype)
+                .eq("id", prototype.id)
+        } catch (e: Exception) {
+            // Handle error
+            throw e
+        }
+    }
+    
+    override suspend fun deletePrototype(id: String) {
+        try {
+            supabaseClient.client
+                .from("prototypes")
+                .delete()
+                .eq("id", id)
+        } catch (e: Exception) {
+            // Handle error
+            throw e
+        }
+    }
+}
