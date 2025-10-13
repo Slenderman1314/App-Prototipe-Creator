@@ -1,0 +1,250 @@
+package app.prototype.creator.data.supabase
+
+import app.prototype.creator.data.config.AppConfig
+import io.github.jan.supabase.SupabaseClient
+import io.github.jan.supabase.createSupabaseClient
+import io.github.jan.supabase.gotrue.GoTrue
+import io.github.jan.supabase.postgrest.Postgrest
+import io.github.jan.supabase.realtime.Realtime
+import io.github.jan.supabase.storage.Storage
+import io.ktor.client.engine.HttpClientEngine
+import io.ktor.client.plugins.logging.LogLevel
+import io.ktor.client.plugins.logging.Logger
+import io.ktor.client.plugins.logging.Logging
+import io.ktor.client.plugins.logging.SIMPLE
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.SupervisorJob
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.runBlocking
+import io.github.aakira.napier.Napier
+
+/**
+ * Cliente de Supabase para la aplicación
+ * Maneja la conexión con Supabase y proporciona acceso a los diferentes servicios
+ */
+class SupabaseClient private constructor() {
+    
+    private val _isInitialized = MutableStateFlow(false)
+    val isInitialized: StateFlow<Boolean> = _isInitialized.asStateFlow()
+    
+    private var _client: io.github.jan.supabase.SupabaseClient? = null
+    val client: io.github.jan.supabase.SupabaseClient
+        get() = _client ?: throw IllegalStateException("Supabase client no inicializado. Llama a initialize() primero.")
+    
+    // Servicios de Supabase
+    val postgrest: Postgrest
+        get() = client.postgrest
+    
+    val auth: GoTrue
+        get() = client.auth
+    
+    val storage: Storage
+        get() = client.storage
+    
+    val realtime: Realtime
+        get() = client.realtime
+        
+    fun initialize(httpClientEngine: HttpClientEngine) {
+        _client = createSupabaseClient(
+            supabaseUrl = AppConfig.SUPABASE_URL,
+            supabaseKey = AppConfig.SUPABASE_ANON_KEY,
+            httpEngine = httpClientEngine
+        ) {
+            install(Postgrest)
+            install(GoTrue)
+            install(Storage)
+            install(Realtime)
+            
+            // Configuración de logging
+            install(io.github.jan.supabase.plugins.logging.Logging) {
+                level = LogLevel.ALL
+                logger = object : io.github.jan.supabase.plugins.logging.Logger {
+                    override fun log(level: LogLevel, message: String) {
+                        when (level) {
+                            LogLevel.ERROR -> Napier.e("Supabase: $message")
+                            LogLevel.WARNING -> Napier.w("Supabase: $message")
+                            LogLevel.INFO -> Napier.i("Supabase: $message")
+                            LogLevel.HEADER -> Napier.d("Supabase: $message")
+                            LogLevel.BODY -> Napier.d("Supabase: $message")
+                            else -> Napier.d("Supabase: $message")
+                        }
+                    }
+                }
+            }
+        }
+        
+        _isInitialized.value = true
+        Napier.i("Supabase client inicializado correctamente")
+    }
+    
+    companion object {
+        @Volatile
+        private var INSTANCE: SupabaseClient? = null
+        
+        fun getInstance(): SupabaseClient {
+            return INSTANCE ?: synchronized(this) {
+                INSTANCE ?: SupabaseClient().also { INSTANCE = it }
+            }
+        }
+    }
+    
+    // Ámbito para las corrutinas
+    private val scope = CoroutineScope(Dispatchers.Default + SupervisorJob())
+    
+    /**
+     * Inicializa el cliente de Supabase de forma síncrona
+     * @param supabaseUrl URL de la instancia de Supabase
+     * @param supabaseAnonKey Clave anónima de Supabase
+     * @param engine Motor HTTP a utilizar (opcional)
+     */
+    fun initialize(supabaseUrl: String, supabaseAnonKey: String, engine: HttpClientEngine = CIO.create()) {
+        if (_isInitialized.value) return
+        
+        runBlocking {
+            try {
+                _client = createSupabaseClient(
+                    supabaseUrl = supabaseUrl,
+                    supabaseKey = supabaseAnonKey
+                ) {
+                    // Configuración del cliente HTTP
+                    httpConfig {
+                        install(Logging) {
+                            logger = object : Logger {
+                                override fun log(message: String) {
+                                    if (Config.isDebug) {
+                                        Napier.d("Supabase: $message")
+                                    }
+                                }
+                            }
+                            level = if (Config.isDebug) LogLevel.HEADERS else LogLevel.NONE
+                        }
+                    }
+                    
+                    // Configuración de autenticación
+                    install(GoTrue) {
+                        // Configuración de autenticación
+                    }
+                    
+                    // Configuración de PostgREST
+                    install(Postgrest) {
+                        // Configuración de PostgREST
+                    }
+                    
+                    // Configuración de Realtime
+                    install(Realtime) {
+                        // Configuración de Realtime
+                    }
+                    
+                    // Configuración de Storage
+                    install(Storage) {
+                        // Configuración de Storage
+                    }
+                }
+                
+                _isInitialized.value = true
+                
+                if (Config.isDebug) {
+                    Napier.i("✅ Supabase client inicializado correctamente")
+                    Napier.d("🔗 URL: $supabaseUrl")
+                }
+            } catch (e: Exception) {
+                val errorMsg = "❌ Error al inicializar Supabase: ${e.message}"
+                Napier.e(errorMsg, e)
+                throw RuntimeException(errorMsg, e)
+            }
+        }
+    }
+    
+    /**
+     * Cierra la conexión con Supabase
+     */
+    suspend fun close() {
+        _client?.let { client ->
+            try {
+                client.close()
+                if (Config.isDebug) {
+                    Napier.i("🔌 Conexión con Supabase cerrada correctamente")
+                }
+            } catch (e: Exception) {
+                Napier.e("Error al cerrar la conexión con Supabase", e)
+            } finally {
+                _client = null
+                _isInitialized.value = false
+            }
+        }
+    }
+    
+    companion object {
+        @Volatile
+        private var INSTANCE: SupabaseClient? = null
+        
+        /**
+         * Obtiene la instancia del cliente de Supabase
+         * @throws IllegalStateException si el cliente no ha sido inicializado
+         */
+        fun getInstance(): SupabaseClient {
+            return INSTANCE ?: throw IllegalStateException(
+                "SupabaseClient no ha sido inicializado. Llama a initialize() primero."
+            )
+        }
+        
+        /**
+         * Inicializa el cliente de Supabase
+         * @param supabaseUrl URL de la instancia de Supabase
+         * @param supabaseAnonKey Clave anónima de Supabase
+         * @param engine Motor HTTP a utilizar (opcional)
+         * @return La instancia del cliente de Supabase
+         */
+        fun initialize(
+            supabaseUrl: String,
+            supabaseAnonKey: String,
+            engine: HttpClientEngine = CIO.create()
+        ): SupabaseClient {
+            return INSTANCE ?: synchronized(this) {
+                INSTANCE ?: SupabaseClient().also { instance ->
+                    instance.initialize(supabaseUrl, supabaseAnonKey, engine)
+                    INSTANCE = instance
+                }
+            }
+        }
+        
+        /**
+         * Cierra la conexión con Supabase
+         */
+        suspend fun close() {
+            INSTANCE?.close()
+            INSTANCE = null
+        }
+        
+        /**
+         * Comprueba si el cliente está inicializado
+         */
+        fun isInitialized(): Boolean = INSTANCE?.isInitialized?.value == true
+    }
+}
+
+/**
+ * Extensión para acceder al cliente de Supabase de forma sencilla
+ * @throws IllegalStateException si el cliente no ha sido inicializado
+ */
+val supabaseClient: SupabaseClient
+    get() = SupabaseClient.getInstance()
+
+/**
+ * Extensión para acceder de forma segura al cliente de Supabase
+ * @return El cliente de Supabase o null si no está inicializado
+ */
+fun getSupabaseClientOrNull(): SupabaseClient? {
+    return try {
+        SupabaseClient.getInstance()
+    } catch (e: IllegalStateException) {
+        if (Config.isDebug) {
+            Napier.w("Intento de acceso a SupabaseClient no inicializado")
+        }
+        null
+    }
+}

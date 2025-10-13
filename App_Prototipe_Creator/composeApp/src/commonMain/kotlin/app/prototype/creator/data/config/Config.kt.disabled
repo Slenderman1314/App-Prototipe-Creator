@@ -1,0 +1,186 @@
+package app.prototype.creator.data.config
+
+import com.russhwolf.settings.Settings
+import com.russhwolf.settings.get
+import com.russhwolf.settings.set
+import io.github.aakira.napier.Napier
+import io.github.aakira.napier.AndroidLogLevel
+import io.github.aakira.napier.DebugAntilog
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.StateFlow
+import org.koin.core.component.KoinComponent
+import org.koin.core.component.get
+import java.io.File
+
+/**
+ * Clase que maneja la configuración de la aplicación
+ * Carga las variables de entorno y proporciona acceso a la configuración
+ */
+class AppConfig(private val settings: Settings) : KoinComponent {
+    
+    // Flujo de estado para la configuración
+    private val _configState = MutableStateFlow(loadConfig())
+    val configState: StateFlow<Map<String, String>> = _configState
+    
+    // Propiedades de configuración
+    val supabaseUrl: String get() = _configState.value["SUPABASE_URL"] ?: error("SUPABASE_URL no configurado")
+    val supabaseAnonKey: String get() = _configState.value["SUPABASE_ANON_KEY"] ?: error("SUPABASE_ANON_KEY no configurado")
+    val databaseName: String get() = _configState.value["DATABASE_NAME"] ?: "prototypes"
+    val isDebug: Boolean get() = (_configState.value["DEBUG"] ?: "false").toBooleanStrict()
+    val defaultTheme: String get() = _configState.value["DEFAULT_THEME"] ?: "system"
+    val defaultLanguage: String get() = _configState.value["DEFAULT_LANGUAGE"] ?: "es"
+    
+    init {
+        // Configurar logger si estamos en modo debug
+        if (isDebug) {
+            Napier.base(DebugAntilog())
+            Napier.d("Configuración cargada: $this")
+        }
+    }
+    
+    override fun toString(): String {
+        return """
+            |AppConfig {
+            |  supabaseUrl: $supabaseUrl
+            |  databaseName: $databaseName
+            |  isDebug: $isDebug
+            |  defaultTheme: $defaultTheme
+            |  defaultLanguage: $defaultLanguage
+            |}
+        """.trimMargin()
+    }
+    
+    /**
+     * Carga la configuración desde las variables de entorno
+     */
+    private fun loadConfig(): Map<String, String> {
+        return try {
+            // Intenta cargar desde el archivo .env
+            val env = loadEnvFile()
+            
+            // Cargar desde las variables de entorno del sistema, sobrescribiendo las del archivo .env
+            System.getenv().forEach { (key, value) ->
+                if (key.startsWith("SUPABASE_") || key == "DATABASE_NAME" || key == "DEBUG" || 
+                    key == "DEFAULT_THEME" || key == "DEFAULT_LANGUAGE") {
+                    env[key] = value
+                }
+            }
+            
+            // Guardar en preferencias
+            env.forEach { (key, value) ->
+                settings.put(key, value)
+            }
+            
+            _configState.value = env
+            env
+        } catch (e: Exception) {
+            // En caso de error, intentar cargar desde las preferencias guardadas
+            val savedConfig = mutableMapOf<String, String>()
+            settings.keys.forEach { key ->
+                settings.getStringOrNull(key)?.let { value ->
+                    savedConfig[key] = value
+                }
+            }
+            
+            if (savedConfig.isNotEmpty()) {
+                _configState.value = savedConfig
+            } else {
+                // Configuración por defecto si no hay nada guardado
+                _configState.value = mapOf(
+                    "SUPABASE_URL" to "",
+                    "SUPABASE_ANON_KEY" to "",
+                    "DATABASE_NAME" to "prototypes",
+                    "DEBUG" to "true",
+                    "DEFAULT_THEME" to "system",
+                    "DEFAULT_LANGUAGE" to "es"
+                )
+            }
+            
+            _configState.value
+        }
+    }
+    
+    /**
+     * Actualiza un valor de configuración
+     */
+    fun updateConfig(key: String, value: String) {
+        val newConfig = _configState.value.toMutableMap()
+        newConfig[key] = value
+        _configState.value = newConfig
+        
+        // Guardar en preferencias
+        settings.put(key, value)
+        
+        // Si estamos en modo debug, loguear el cambio
+        if (isDebug) {
+            Napier.d("Config updated: $key = $value")
+        }
+    }
+    
+    /**
+     * Carga el archivo .env y devuelve un mapa con las variables
+     */
+    private fun loadEnvFile(): MutableMap<String, String> {
+        val env = mutableMapOf<String, String>()
+        
+        try {
+            val envFile = File(".env")
+            if (envFile.exists()) {
+                envFile.forEachLine { line ->
+                    if (line.isNotBlank() && !line.startsWith("#")) {
+                        val parts = line.split('=', limit = 2)
+                        if (parts.size == 2) {
+                            val key = parts[0].trim()
+                            val value = parts[1].trim().trim('"').trim('\'')
+                            env[key] = value
+                        }
+                    }
+                }
+            }
+        } catch (e: Exception) {
+            if (isDebug) {
+                Napier.e("Error al cargar el archivo .env", e)
+            }
+        }
+        
+        return env
+    }
+    
+    /**
+     * Clase auxiliar para el logger de depuración
+     */
+    private class DebugAntilog : Napier.Antilog() {
+        override fun performLog(priority: Napier.Priority, tag: String?, throwable: Throwable?, message: String?) {
+            val tagStr = tag?.let { "[$it] " } ?: ""
+            val throwableStr = throwable?.let { "\n${it.stackTraceToString()}" } ?: ""
+            println("${priority.name}: $tagStr$message$throwableStr")
+        }
+    }
+}
+
+/**
+ * Extensión para obtener un valor String de las preferencias
+ */
+private fun Settings.getStringOrNull(key: String): String? = try {
+    this[key]
+} catch (e: NoSuchElementException) {
+    null
+}
+
+/**
+ * Instancia global de AppConfig
+ */
+object AppConfigProvider : KoinComponent {
+    private val instance: AppConfig by lazy {
+        val settings: Settings = get()
+        AppConfig(settings)
+    }
+    
+    fun getConfig(): AppConfig = instance
+}
+
+/**
+ * Propiedad de extensión para acceder a la configuración de forma sencilla
+ */
+val appConfig: AppConfig
+    get() = AppConfigProvider.getConfig()

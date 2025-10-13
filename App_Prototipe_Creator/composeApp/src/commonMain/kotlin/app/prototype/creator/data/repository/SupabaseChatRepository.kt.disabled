@@ -1,0 +1,52 @@
+package app.prototype.creator.data.repository
+
+import app.prototype.creator.data.model.Message
+import app.prototype.creator.data.supabase.SupabaseClient
+import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.flow
+
+class SupabaseChatRepository(private val supabaseClient: SupabaseClient) : ChatRepository {
+    
+    override suspend fun getMessages(chatId: String): Flow<List<Message>> = flow {
+        try {
+            val messages = supabaseClient.client
+                .from("messages")
+                .select()
+                .eq("chat_id", chatId)
+                .order("timestamp")
+                .decodeList<Message>()
+            
+            emit(messages)
+        } catch (e: Exception) {
+            // Handle error
+            throw e
+        }
+    }
+    
+    override suspend fun sendMessage(chatId: String, message: Message) {
+        try {
+            supabaseClient.client
+                .from("messages")
+                .insert(message)
+        } catch (e: Exception) {
+            // Handle error
+            throw e
+        }
+    }
+    
+    override suspend fun createChat(title: String): String {
+        return try {
+            val result = supabaseClient.client
+                .from("chats")
+                .insert(mapOf("title" to title))
+                .select("id")
+                .single()
+                .decodeSingle<Map<String, String>>()
+            
+            result["id"] ?: throw IllegalStateException("No se pudo crear el chat")
+        } catch (e: Exception) {
+            // Handle error
+            throw e
+        }
+    }
+}

@@ -1,0 +1,51 @@
+package app.prototype.creator.di
+
+import app.prototype.creator.data.config.AppConfig
+import app.prototype.creator.data.supabase.SupabaseClient
+import com.russhwolf.settings.Settings
+import com.russhwolf.settings.coroutines.SuspendSettings
+import com.russhwolf.settings.datastore.DataStoreSettings
+import io.ktor.client.engine.*
+import io.ktor.client.engine.cio.*
+import org.koin.android.ext.koin.androidContext
+import org.koin.dsl.module
+
+/**
+ * Módulo de Koin para la configuración de Supabase
+ */
+val supabaseModule = module {
+    // Configuración de Settings para almacenamiento local
+    single<Settings> {
+        DataStoreSettings(androidContext())
+    }
+    
+    // Configuración de Supabase
+    single {
+        AppConfig
+    }
+    
+    // Cliente HTTP
+    single<HttpClientEngine> {
+        CIO.create {
+            requestTimeout = 60_000
+            endpoint {
+                connectTimeout = 30_000
+                requestTimeout = 60_000
+                socketTimeout = 60_000
+            }
+        }
+    }
+    
+    // Cliente de Supabase
+    single {
+        SupabaseClient.getInstance().apply {
+            // Inicializar el cliente con el motor HTTP configurado
+            initialize(get())
+        }
+    }
+    
+    // Configuración de SuspendSettings para operaciones asíncronas
+    single<SuspendSettings> {
+        SuspendSettings(get())
+    }
+}

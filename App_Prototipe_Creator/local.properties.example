@@ -1,0 +1,12 @@
+# Local configuration file (create a copy as local.properties and update the paths)
+# This file is in .gitignore and should not be committed to version control
+
+# Android SDK location (update this path to your local Android SDK location)
+sdk.dir=C:\\Users\\YOUR_USERNAME\\AppData\\Local\\Android\\Sdk
+
+# Android NDK location (optional, uncomment if needed)
+# ndk.dir=C:\\Users\\YOUR_USERNAME\\AppData\\Local\\Android\\Sdk\\ndk\\25.2.9519653
+
+# For Windows, use double backslashes or forward slashes
+# Example: C:\\Users\\YourUsername\\AppData\\Local\\Android\\Sdk
+# or C:/Users/YourUsername/AppData/Local/Android/Sdk
