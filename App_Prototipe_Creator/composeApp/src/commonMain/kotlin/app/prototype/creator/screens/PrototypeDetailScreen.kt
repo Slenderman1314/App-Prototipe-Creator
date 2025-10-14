@@ -14,6 +14,20 @@ import app.prototype.creator.data.service.SupabaseService
 import app.prototype.creator.ui.components.HtmlViewer
 import io.github.aakira.napier.Napier
 import kotlinx.coroutines.launch
+import kotlinx.datetime.Instant
+import kotlinx.datetime.TimeZone
+import kotlinx.datetime.toLocalDateTime
+
+private fun formatDate(timestamp: Long): String {
+    val instant = Instant.fromEpochMilliseconds(timestamp)
+    val localDateTime = instant.toLocalDateTime(TimeZone.currentSystemDefault())
+    val day = localDateTime.dayOfMonth.toString().padStart(2, '0')
+    val month = (localDateTime.monthNumber).toString().padStart(2, '0')
+    val year = localDateTime.year
+    val hour = localDateTime.hour.toString().padStart(2, '0')
+    val minute = localDateTime.minute.toString().padStart(2, '0')
+    return "$day/$month/$year $hour:$minute"
+}
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -183,7 +197,7 @@ fun PrototypeDetailScreen(
                                         Spacer(modifier = Modifier.height(8.dp))
                                         
                                         Text(
-                                            text = "Creado: ${java.text.SimpleDateFormat("dd/MM/yyyy HH:mm").format(java.util.Date(prototype?.createdAt ?: 0))}",
+                                            text = "Creado: ${formatDate(prototype?.createdAt ?: 0)}",
                                             style = MaterialTheme.typography.bodySmall,
                                             color = MaterialTheme.colorScheme.onSurfaceVariant
                                         )

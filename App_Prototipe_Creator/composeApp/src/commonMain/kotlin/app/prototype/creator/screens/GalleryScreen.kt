@@ -20,8 +20,9 @@ import app.prototype.creator.data.model.Prototype
 import app.prototype.creator.data.service.SupabaseService
 import io.github.aakira.napier.Napier
 import kotlinx.coroutines.launch
-import java.text.SimpleDateFormat
-import java.util.*
+import kotlinx.datetime.Instant
+import kotlinx.datetime.TimeZone
+import kotlinx.datetime.toLocalDateTime
 
 // Data class for the gallery state
 data class GalleryState(
@@ -263,9 +264,10 @@ private fun PrototypeItem(
     onPrototypeClick: () -> Unit,
     onFavoriteClick: () -> Unit
 ) {
-    val dateFormat = remember { SimpleDateFormat("MMM dd, yyyy", Locale.getDefault()) }
     val formattedDate = remember(prototype.createdAt) {
-        dateFormat.format(Date(prototype.createdAt))
+        val instant = Instant.fromEpochMilliseconds(prototype.createdAt)
+        val localDateTime = instant.toLocalDateTime(TimeZone.currentSystemDefault())
+        "${localDateTime.month.name.take(3).lowercase().replaceFirstChar { it.uppercase() }} ${localDateTime.dayOfMonth}, ${localDateTime.year}"
     }
     
     var showDetailsDialog by remember { mutableStateOf(false) }
