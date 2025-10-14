@@ -3,22 +3,25 @@ package app.prototype.creator
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.ErrorOutline
+import androidx.compose.material.icons.filled.Warning
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
+import androidx.compose.runtime.compositionLocalOf
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
-import app.prototype.creator.di.initKoin
+import app.prototype.creator.data.repository.ChatRepository
+import app.prototype.creator.data.repository.PrototypeRepository
+import app.prototype.creator.data.service.SupabaseService
 import app.prototype.creator.ui.theme.AppTheme
-import app.prototype.creator.utils.Config
 import io.github.aakira.napier.Napier
-import org.koin.compose.KoinApplication
+import org.koin.compose.koinInject
 
-/**
- * Sealed class representing all screens in the app
- */
+// Koin is initialized in Main.kt
+
+// Sealed class representing all screens in the app
 sealed class Screen(val route: String) {
     object Gallery : Screen("gallery")
     object Chat : Screen("chat")
@@ -31,65 +34,83 @@ sealed class Screen(val route: String) {
     }
 }
 
-@Composable
-fun App() {
-    // App state
-    var isAppReady by remember { mutableStateOf(false) }
-    var initializationError by remember { mutableStateOf<String?>(null) }
-    
-    // App settings
-    val appSettings = remember {
-        AppSettings(
-            isDarkTheme = Config.defaultTheme.equals("dark", ignoreCase = true),
-            defaultLanguage = Config.defaultLanguage
-        )
-    }
-    
-    // Initialize Koin
-    LaunchedEffect(Unit) {
-        try {
-            Napier.d("🚀 Starting app initialization...")
-            if (!koinInitialized) {
-                Napier.d("📦 Initializing Koin...")
-                initKoin()
-                koinInitialized = true
-                Napier.d("✅ Koin initialized successfully")
-            } else {
-                Napier.d("ℹ️ Koin already initialized")
-            }
-            Napier.d("✅ App ready!")
-            isAppReady = true
-        } catch (e: Exception) {
-            val errorMsg = "❌ Error initializing app: ${e.message}\n${e.stackTraceToString()}"
-            initializationError = errorMsg
-            Napier.e(errorMsg, e)
-            e.printStackTrace()
-        }
-    }
-    
-    // Main app content
-    KoinApplication(application = {
-        // Koin modules are already loaded in initKoin()
-    }) {
-        AppContent(
-            isAppReady = isAppReady,
-            initializationError = initializationError,
-            appSettings = appSettings,
-            onRetry = { 
-                initializationError = null
-                isAppReady = false 
+/**
+ * App-wide settings that control the app's appearance and behavior
+ * @property isDarkTheme Whether dark theme is enabled
+ * @property defaultLanguage The default language code (e.g., "en", "es")
+ */
+data class AppSettings(
+    var isDarkTheme: Boolean = false,
+    val defaultLanguage: String = "en"
+) {
+    companion object {
+        val Saver = androidx.compose.runtime.saveable.Saver<AppSettings, Any>(
+            save = { listOf(it.isDarkTheme, it.defaultLanguage) },
+            restore = { 
+                AppSettings(
+                    isDarkTheme = (it as List<*>)[0] as Boolean,
+                    defaultLanguage = (it.getOrNull(1) as? String) ?: "en"
+                )
             }
         )
     }
 }
 
+// CompositionLocal for theme settings
+val LocalAppSettings = androidx.compose.runtime.staticCompositionLocalOf { AppSettings() }
+
 @Composable
-private fun AppContent(
-    isAppReady: Boolean,
-    initializationError: String?,
-    appSettings: AppSettings,
-    onRetry: () -> Unit
-) {
+fun App() {
+    // Koin is already initialized in Main.kt
+    AppContent()
+}
+
+@Composable
+private fun AppContent() {
+    val appSettings = remember { AppSettings() }
+    var isAppReady by remember { mutableStateOf(false) }
+    var initializationError by remember { mutableStateOf<String?>(null) }
+    
+    // Get services from Koin with null safety
+    val supabaseService = koinInject<SupabaseService>()
+    val prototypeRepository = koinInject<PrototypeRepository>()
+    val chatRepository = koinInject<ChatRepository>()
+    
+    // Track service initialization state
+    var servicesInitialized by remember { mutableStateOf(false) }
+    var servicesError by remember { mutableStateOf<String?>(null) }
+
+    LaunchedEffect(Unit) {
+        runCatching {
+            // Verify all required services are initialized
+            val services = listOf(
+                "SupabaseService" to supabaseService,
+                "PrototypeRepository" to prototypeRepository,
+                "ChatRepository" to chatRepository
+            )
+            
+            val missingServices = services.filter { (_, service) -> service == null }
+                .map { (name, _) -> name }
+            
+            if (missingServices.isEmpty()) {
+                isAppReady = true
+                initializationError = null
+                servicesInitialized = true
+                Napier.d("✅ All services initialized successfully")
+            } else {
+                val error = "❌ Missing services: ${missingServices.joinToString()}"
+                Napier.e(error)
+                servicesError = error
+                isAppReady = false
+            }
+        }.onFailure { e ->
+            val error = "❌ Error initializing services: ${e.message}"
+            Napier.e(error, e)
+            servicesError = error
+            isAppReady = false
+        }
+    }
+
     AppTheme(
         darkTheme = appSettings.isDarkTheme
     ) {
@@ -98,25 +119,28 @@ private fun AppContent(
             color = MaterialTheme.colorScheme.background
         ) {
             when {
-                initializationError != null -> {
-                    ErrorScreen(
-                        message = initializationError,
-                        onRetry = onRetry
-                    )
-                }
-                !isAppReady -> {
-                    LoadingScreen()
-                }
-                else -> {
-                    MainAppContent()
-                }
+                servicesError != null -> ErrorScreen(
+                    message = servicesError ?: "Unknown error occurred",
+                    onRetry = { 
+                        servicesError = null
+                        servicesInitialized = false
+                        isAppReady = false
+                    },
+                    modifier = Modifier.fillMaxSize()
+                )
+                !servicesInitialized -> LoadingScreen(initializationError)
+                else -> MainAppContent(
+                    appSettings = appSettings,
+                    prototypeRepository = prototypeRepository,
+                    chatRepository = chatRepository
+                )
             }
         }
     }
 }
 
 @Composable
-private fun LoadingScreen() {
+private fun LoadingScreen(error: String?) {
     Box(
         modifier = Modifier
             .fillMaxSize()
@@ -127,79 +151,37 @@ private fun LoadingScreen() {
             horizontalAlignment = Alignment.CenterHorizontally,
             verticalArrangement = Arrangement.Center
         ) {
-            CircularProgressIndicator()
-            Spacer(modifier = Modifier.height(16.dp))
-            Text(
-                text = "Inicializando la aplicación...",
-                style = MaterialTheme.typography.bodyMedium
-            )
-        }
-    }
-}
-
-// Koin initialization state
-private var koinInitialized = false
-
-@Composable
-private fun MainAppContent() {
-    // Simple navigation state
-    var currentScreen by remember { mutableStateOf<Screen>(Screen.Gallery) }
-    var selectedPrototypeId by remember { mutableStateOf<String?>(null) }
-    
-    when (currentScreen) {
-        is Screen.Gallery -> {
-            app.prototype.creator.screens.GalleryScreen(
-                onNavigateToChat = { currentScreen = Screen.Chat },
-                onNavigateToPrototype = { prototypeId ->
-                    selectedPrototypeId = prototypeId
-                    currentScreen = Screen.PrototypeDetail
-                }
-            )
-        }
-        is Screen.Chat -> {
-            app.prototype.creator.screens.ChatScreen(
-                onBack = { currentScreen = Screen.Gallery }
-            )
-        }
-        is Screen.PrototypeDetail -> {
-            selectedPrototypeId?.let { id ->
-                app.prototype.creator.screens.PrototypeDetailScreen(
-                    prototypeId = id,
-                    onBack = { currentScreen = Screen.Gallery }
+            if (error != null) {
+                Icon(
+                    imageVector = Icons.Default.Warning,
+                    contentDescription = "Error",
+                    tint = MaterialTheme.colorScheme.error,
+                    modifier = Modifier.size(48.dp)
+                )
+                Spacer(modifier = Modifier.height(16.dp))
+                Text(
+                    text = "Error",
+                    style = MaterialTheme.typography.headlineSmall,
+                    color = MaterialTheme.colorScheme.error
+                )
+                Spacer(modifier = Modifier.height(8.dp))
+                Text(
+                    text = error,
+                    style = MaterialTheme.typography.bodyMedium,
+                    textAlign = TextAlign.Center
+                )
+            } else {
+                CircularProgressIndicator()
+                Spacer(modifier = Modifier.height(16.dp))
+                Text(
+                    text = "Initializing application...",
+                    style = MaterialTheme.typography.bodyMedium
                 )
             }
         }
     }
 }
 
-/**
- * App-wide settings that control the app's appearance and behavior
- * @property isDarkTheme Whether dark theme is enabled
- * @property defaultLanguage The default language code (e.g., "en", "es")
- */
-data class AppSettings(
-    var isDarkTheme: Boolean = false,
-    val defaultLanguage: String = Config.defaultLanguage
-) {
-    companion object {
-        val Saver = androidx.compose.runtime.saveable.Saver<AppSettings, Any>(
-            save = { listOf(it.isDarkTheme, it.defaultLanguage) },
-            restore = { 
-                AppSettings(
-                    isDarkTheme = (it as List<*>)[0] as Boolean,
-                    defaultLanguage = (it.getOrNull(1) as? String) ?: Config.defaultLanguage
-                )
-            }
-        )
-    }
-}
-
-// CompositionLocal for theme settings
-val LocalAppSettings = androidx.compose.runtime.staticCompositionLocalOf { AppSettings() }
-
-/**
- * Shows a full-screen error message with a retry button
- */
 @Composable
 private fun ErrorScreen(
     message: String,
@@ -209,8 +191,7 @@ private fun ErrorScreen(
     Box(
         modifier = modifier
             .fillMaxSize()
-            .background(MaterialTheme.colorScheme.errorContainer)
-            .padding(16.dp),
+            .background(MaterialTheme.colorScheme.background),
         contentAlignment = Alignment.Center
     ) {
         Column(
@@ -219,40 +200,71 @@ private fun ErrorScreen(
             modifier = Modifier.padding(16.dp)
         ) {
             Icon(
-                imageVector = Icons.Default.ErrorOutline,
+                Icons.Default.Warning,
                 contentDescription = "Error",
-                tint = MaterialTheme.colorScheme.onErrorContainer,
-                modifier = Modifier.size(64.dp)
+                tint = MaterialTheme.colorScheme.error,
+                modifier = Modifier.size(48.dp)
             )
-            
             Spacer(modifier = Modifier.height(16.dp))
-            
             Text(
-                text = "Something went wrong",
+                text = "Error",
                 style = MaterialTheme.typography.headlineSmall,
-                color = MaterialTheme.colorScheme.onErrorContainer
+                color = MaterialTheme.colorScheme.error
             )
-            
             Spacer(modifier = Modifier.height(8.dp))
-            
             Text(
                 text = message,
                 style = MaterialTheme.typography.bodyMedium,
-                color = MaterialTheme.colorScheme.onErrorContainer,
-                textAlign = TextAlign.Center,
-                modifier = Modifier.padding(horizontal = 16.dp)
+                textAlign = TextAlign.Center
             )
-            
             Spacer(modifier = Modifier.height(24.dp))
-            
-            Button(
-                onClick = onRetry,
-                colors = ButtonDefaults.buttonColors(
-                    containerColor = MaterialTheme.colorScheme.error,
-                    contentColor = MaterialTheme.colorScheme.onError
+            Button(onClick = onRetry) {
+                Text("Try Again")
+            }
+        }
+    }
+}
+
+@Composable
+private fun MainAppContent(
+    appSettings: AppSettings,
+    prototypeRepository: PrototypeRepository,
+    chatRepository: ChatRepository
+) {
+    var currentScreen by remember { mutableStateOf<Screen>(Screen.Gallery) }
+    var selectedPrototypeId by remember { mutableStateOf<String?>(null) }
+    
+    CompositionLocalProvider(
+        LocalAppSettings provides appSettings
+    ) {
+        when (currentScreen) {
+            is Screen.Gallery -> {
+                // Using fully qualified name to avoid any resolution issues
+                @Suppress("ClassName")
+                app.prototype.creator.screens.GalleryScreen(
+                    onNavigateToChat = { currentScreen = Screen.Chat },
+                    onNavigateToPrototype = { prototypeId ->
+                        selectedPrototypeId = prototypeId
+                        currentScreen = Screen.PrototypeDetail
+                    }
                 )
-            ) {
-                Text("Retry")
+            }
+            is Screen.Chat -> {
+                @Suppress("ClassName")
+                app.prototype.creator.screens.ChatScreen(
+                    onBack = { currentScreen = Screen.Gallery }
+                )
+            }
+            is Screen.PrototypeDetail -> {
+                selectedPrototypeId?.let { id ->
+                    @Suppress("ClassName")
+                    app.prototype.creator.screens.PrototypeDetailScreen(
+                        prototypeId = id,
+                        onBack = { currentScreen = Screen.Gallery }
+                    )
+                } ?: run {
+                    currentScreen = Screen.Gallery
+                }
             }
         }
     }

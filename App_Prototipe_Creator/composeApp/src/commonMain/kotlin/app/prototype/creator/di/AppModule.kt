@@ -3,19 +3,27 @@ package app.prototype.creator.di
 import app.prototype.creator.data.repository.ChatRepository
 import app.prototype.creator.data.repository.InMemoryChatRepository
 import app.prototype.creator.data.repository.InMemoryPrototypeRepository
+import app.prototype.creator.data.repository.SupabasePrototypeRepository
 import app.prototype.creator.data.repository.PrototypeRepository
 import app.prototype.creator.data.service.AiService
 import app.prototype.creator.data.service.N8nAIService
+import app.prototype.creator.data.local.AppSettings
+import app.prototype.creator.data.local.FavoritesRepository
+import app.prototype.creator.data.service.SupabaseService
+import app.prototype.creator.data.service.SupabaseServiceImpl
 import app.prototype.creator.utils.Config
+import com.russhwolf.settings.Settings
 import io.github.aakira.napier.DebugAntilog
 import io.github.aakira.napier.Napier
 import io.ktor.client.HttpClient
+import io.ktor.client.engine.cio.CIO
 import io.ktor.client.plugins.HttpTimeout
 import io.ktor.client.plugins.contentnegotiation.ContentNegotiation
 import io.ktor.client.plugins.defaultRequest
 import io.ktor.client.plugins.logging.LogLevel
 import io.ktor.client.plugins.logging.Logger
 import io.ktor.client.plugins.logging.Logging
+import io.ktor.client.request.header
 import io.ktor.http.ContentType
 import io.ktor.http.HttpHeaders
 import io.ktor.serialization.kotlinx.json.json
@@ -47,23 +55,25 @@ fun initKoin() {
                     level = if (Config.DEBUG) Level.DEBUG else Level.INFO
                 )
             )
-
-            // Initialize logging
+            
+            // Enable debug mode if needed
             if (Config.DEBUG) {
-                Napier.base(DebugAntilog())
+                // Additional debug configuration if needed
             }
-
-            // Load modules
-            Napier.d("📚 Loading modules...")
+            
+            // Load all modules
             modules(
                 appModule,
-                viewModelModule
+                viewModelModule,
+                module {
+                    // Any additional modules can be added here
+                }
             )
         }
-        Napier.d("✅ Koin started successfully")
+        Napier.d(" Koin started successfully")
     } catch (e: Exception) {
         // Log the error and rethrow
-        Napier.e("❌ Error starting Koin: ${e.message}", e)
+        Napier.e(" Error starting Koin: ${e.message}", e)
         e.printStackTrace()
         throw e
     }
@@ -72,16 +82,54 @@ fun initKoin() {
 // Platform-specific initialization (to be implemented in androidMain)
 expect fun initPlatformKoin()
 
+// Helper function to create HTTP client with proper configuration
+private fun createConfiguredHttpClient(): HttpClient {
+    Napier.d("🔧 Creating HTTP Client...")
+    return HttpClient(CIO) {
+        install(ContentNegotiation) {
+            json(Json {
+                prettyPrint = true
+                isLenient = true
+                ignoreUnknownKeys = true
+            })
+        }
+        install(Logging) {
+            level = LogLevel.INFO
+            logger = object : Logger {
+                override fun log(message: String) {
+                    Napier.d("HTTP: $message")
+                }
+            }
+        }
+        install(HttpTimeout) {
+            requestTimeoutMillis = 60_000L
+            connectTimeoutMillis = 60_000L
+            socketTimeoutMillis = 60_000L
+        }
+        defaultRequest {
+            header(HttpHeaders.ContentType, ContentType.Application.Json)
+        }
+    }.also {
+        Napier.d("✅ HTTP Client created successfully")
+    }
+}
+
 // Main application module
 val appModule = module {
     // Application configuration
-    single {
-        Config
-    }
+    single { Config }
 
-    // HTTP Client
+    // HTTP Client with proper configuration
+    single { createConfiguredHttpClient() }
+
+    // Settings
+    single<Settings> { AppSettings.getSettings() }
+
+    // Favorites Repository
     single {
-        createHttpClient()
+        FavoritesRepository.create(
+            settings = get()
+        )
     }
 
     // AI Service
@@ -93,56 +141,31 @@ val appModule = module {
         )
     }
 
+    // Supabase Service (debe ir antes de los repositorios que lo usan)
+    single<SupabaseService> {
+        SupabaseServiceImpl(
+            client = get(),
+            favoritesRepository = get(),
+            supabaseUrl = Config.supabaseUrl,
+            supabaseKey = Config.supabaseAnonKey
+        )
+    }
+    
     // Repositories
     single<ChatRepository> {
         InMemoryChatRepository()
     }
-
+    
     single<PrototypeRepository> {
-        InMemoryPrototypeRepository()
+        // Usar el repositorio de Supabase en lugar del in-memory
+        SupabasePrototypeRepository(
+            supabaseService = get()
+        )
     }
 }
 
 // ViewModel module
 val viewModelModule = module {
-    // ViewModels are created on-demand in screens
-    // Koin factory definitions would go here if using Koin for ViewModel injection
 }
 
-// Helper function to create HTTP client
-fun createHttpClient() = HttpClient {
-    // Install JSON serializer
-    install(ContentNegotiation) {
-        json(
-            Json {
-                ignoreUnknownKeys = true
-                isLenient = true
-                prettyPrint = true
-            }
-        )
-    }
-
-    // Install logging
-    if (Config.DEBUG) {
-        install(Logging) {
-            logger = object : Logger {
-                override fun log(message: String) {
-                    Napier.d(tag = "HTTP", message = message)
-                }
-            }
-            level = LogLevel.ALL
-        }
-    }
-
-    // Configure timeouts
-    install(HttpTimeout) {
-        requestTimeoutMillis = 60_000
-        connectTimeoutMillis = 30_000
-        socketTimeoutMillis = 60_000
-    }
-
-    // Default headers
-    defaultRequest {
-        headers.append(HttpHeaders.ContentType, ContentType.Application.Json.toString())
-    }
-}
+// createHttpClient function is already defined as createConfiguredHttpClient()
