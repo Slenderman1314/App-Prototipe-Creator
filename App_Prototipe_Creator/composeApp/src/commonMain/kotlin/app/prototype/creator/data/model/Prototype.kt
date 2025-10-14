@@ -8,10 +8,14 @@ data class Prototype(
     val name: String,
     val description: String = "",
     val previewUrl: String,
+    val htmlContent: String? = null,
     val createdAt: Long = System.currentTimeMillis(),
     val updatedAt: Long = System.currentTimeMillis(),
     val tags: List<String> = emptyList(),
-    val isFavorite: Boolean = false
+    val isFavorite: Boolean = false,
+    // Campos adicionales de Supabase
+    val userIdea: String? = null,
+    val validationNotes: String? = null
 ) {
     val createdDate: String
         get() = createdAt.toString()
