@@ -123,6 +123,7 @@ kotlin {
                 implementation("org.jetbrains.kotlinx:kotlinx-serialization-json:$serializationVersion")
                 implementation("com.russhwolf:multiplatform-settings:$settingsVersion")
                 implementation("com.russhwolf:multiplatform-settings-serialization:$settingsVersion")
+                implementation(libs.kotlinx.datetime)
             }
         }
         
