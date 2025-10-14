@@ -2,11 +2,18 @@ package app.prototype.creator.screens
 
 import androidx.compose.foundation.layout.*
 import androidx.compose.ui.Alignment
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.ArrowBack
+import androidx.compose.material.icons.filled.Share
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
-import app.prototype.creator.components.WebView
+import app.prototype.creator.data.model.Prototype
+import app.prototype.creator.data.service.SupabaseService
+import app.prototype.creator.ui.components.HtmlViewer
+import io.github.aakira.napier.Napier
+import kotlinx.coroutines.launch
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -14,72 +21,177 @@ fun PrototypeDetailScreen(
     prototypeId: String,
     onBack: () -> Unit
 ) {
+    // Get SupabaseService from Koin
+    val supabaseService = org.koin.compose.koinInject<SupabaseService>()
+    var prototype by remember { mutableStateOf<Prototype?>(null) }
+    var isLoading by remember { mutableStateOf(true) }
+    var errorMessage by remember { mutableStateOf<String?>(null) }
+    val scope = rememberCoroutineScope()
     
-    // In a real app, this would be loaded from a ViewModel/Repository
-    val prototypeName = "Prototype: $prototypeId"
+    // Load prototype from Supabase
+    LaunchedEffect(prototypeId) {
+        scope.launch {
+            try {
+                isLoading = true
+                errorMessage = null
+                
+                // Fetch prototype details
+                val result = supabaseService.getPrototype(prototypeId)
+                result.fold(
+                    onSuccess = { proto ->
+                        prototype = proto
+                        Napier.d("✅ Prototype loaded: ${proto.name}")
+                        Napier.d("   - ID: ${proto.id}")
+                        Napier.d("   - HTML content length: ${proto.htmlContent?.length ?: 0}")
+                        Napier.d("   - HTML preview: ${proto.htmlContent?.take(100)}")
+                    },
+                    onFailure = { error ->
+                        errorMessage = error.message ?: "Error desconocido"
+                        Napier.e("❌ Error loading prototype: ${error.message}")
+                    }
+                )
+            } catch (e: Exception) {
+                errorMessage = "Error al cargar el prototipo: ${e.message}"
+                Napier.e("❌ Exception in loadPrototype", e)
+            } finally {
+                isLoading = false
+            }
+        }
+    }
     
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text(prototypeName) },
+                title = { Text(prototype?.name ?: "Cargando...") },
                 navigationIcon = {
                     IconButton(onClick = onBack) {
-                        Text("←") // Using text arrow as back button
+                        Icon(Icons.Default.ArrowBack, contentDescription = "Atrás")
+                    }
+                },
+                actions = {
+                    IconButton(onClick = { /* Handle share */ }) {
+                        Icon(Icons.Default.Share, contentDescription = "Compartir")
                     }
                 }
             )
         }
     ) { padding ->
-        Column(
+        Box(
             modifier = Modifier
                 .fillMaxSize()
                 .padding(padding)
-                .padding(16.dp)
         ) {
-            // WebView to display the prototype
-            var isLoading by remember { mutableStateOf(true) }
-            
-            Box(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .weight(1f)
-            ) {
-                // In a real app, you would use the actual prototype URL
-                val prototypeUrl = "https://example.com/prototype/$prototypeId"
-                
-                WebView(
-                    url = prototypeUrl,
-                    modifier = Modifier.fillMaxSize(),
-                    onLoadingStateChanged = { isLoading = it },
-                    onError = { error ->
-                        // Show error message
-                        println("Error loading prototype: $error")
-                    }
-                )
-                
-                if (isLoading) {
+            when {
+                isLoading -> {
                     CircularProgressIndicator(
                         modifier = Modifier.align(Alignment.Center)
                     )
                 }
-            }
-            
-            Spacer(modifier = Modifier.height(16.dp))
-            
-            // Action buttons
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.End
-            ) {
-                Button(
-                    onClick = { /* Open in browser */ },
-                    modifier = Modifier.padding(end = 8.dp)
-                ) {
-                    Text("Open in Browser")
+                errorMessage != null -> {
+                    Column(
+                        modifier = Modifier
+                            .align(Alignment.Center)
+                            .padding(16.dp),
+                        horizontalAlignment = Alignment.CenterHorizontally
+                    ) {
+                        Text(
+                            text = "Error al cargar el prototipo",
+                            style = MaterialTheme.typography.titleMedium,
+                            color = MaterialTheme.colorScheme.error
+                        )
+                        Spacer(modifier = Modifier.height(8.dp))
+                        Text(
+                            text = errorMessage ?: "",
+                            style = MaterialTheme.typography.bodyMedium
+                        )
+                        Spacer(modifier = Modifier.height(16.dp))
+                        Button(onClick = {
+                            scope.launch {
+                                isLoading = true
+                                errorMessage = null
+                                val result = supabaseService.getPrototype(prototypeId)
+                                result.fold(
+                                    onSuccess = { proto ->
+                                        prototype = proto
+                                        isLoading = false
+                                    },
+                                    onFailure = { error ->
+                                        errorMessage = error.message
+                                        isLoading = false
+                                    }
+                                )
+                            }
+                        }) {
+                            Text("Reintentar")
+                        }
+                    }
                 }
-                
-                Button(onClick = { /* Share prototype */ }) {
-                    Text("Share")
+                prototype != null -> {
+                    val htmlContent = prototype?.htmlContent
+                    Napier.d("🔍 Checking HTML content:")
+                    Napier.d("   - htmlContent is null: ${htmlContent == null}")
+                    Napier.d("   - htmlContent length: ${htmlContent?.length ?: 0}")
+                    Napier.d("   - htmlContent isEmpty: ${htmlContent?.isEmpty()}")
+                    
+                    Column(
+                        modifier = Modifier
+                            .fillMaxSize()
+                    ) {
+                        // Si hay contenido HTML, mostrarlo renderizado
+                        if (!htmlContent.isNullOrEmpty()) {
+                            Napier.d("📄 Rendering HTML content for prototype: ${prototype?.name}")
+                            HtmlViewer(
+                                htmlContent = htmlContent,
+                                modifier = Modifier.fillMaxSize()
+                            )
+                        } else {
+                            Napier.w("⚠️ No HTML content available for prototype: ${prototype?.name}")
+                            // Fallback: mostrar detalles si no hay HTML
+                            Column(
+                                modifier = Modifier
+                                    .fillMaxSize()
+                                    .padding(16.dp)
+                            ) {
+                                Text(
+                                    text = prototype?.name ?: "",
+                                    style = MaterialTheme.typography.headlineMedium
+                                )
+                                Spacer(modifier = Modifier.height(8.dp))
+                                Text(
+                                    text = prototype?.description ?: "",
+                                    style = MaterialTheme.typography.bodyMedium,
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                                )
+                                
+                                Spacer(modifier = Modifier.height(16.dp))
+                                
+                                Card(
+                                    modifier = Modifier.fillMaxWidth()
+                                ) {
+                                    Column(modifier = Modifier.padding(16.dp)) {
+                                        Text(
+                                            text = "Detalles del Prototipo",
+                                            style = MaterialTheme.typography.titleMedium
+                                        )
+                                        Spacer(modifier = Modifier.height(8.dp))
+                                        
+                                        Text(
+                                            text = "URL: ${prototype?.previewUrl ?: "No disponible"}",
+                                            style = MaterialTheme.typography.bodySmall
+                                        )
+                                        
+                                        Spacer(modifier = Modifier.height(8.dp))
+                                        
+                                        Text(
+                                            text = "Creado: ${java.text.SimpleDateFormat("dd/MM/yyyy HH:mm").format(java.util.Date(prototype?.createdAt ?: 0))}",
+                                            style = MaterialTheme.typography.bodySmall,
+                                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                                        )
+                                    }
+                                }
+                            }
+                        }
+                    }
                 }
             }
         }

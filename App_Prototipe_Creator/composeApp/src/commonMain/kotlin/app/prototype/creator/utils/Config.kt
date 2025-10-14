@@ -17,10 +17,33 @@ object Config {
     // Database configuration
     val databaseName: String = "prototype_db"
     
+    private fun getRequiredProperty(key: String): String {
+        return System.getProperty(key)?.takeIf { it.isNotBlank() } ?: run {
+            val error = "$key property is not set or is empty. Please check your .env file."
+            Napier.e(error)
+            throw IllegalStateException(error)
+        }
+    }
+
     // n8n configuration
-    val n8nBaseUrl: String = "https://api.example.com/n8n"
-    val n8nWebhookPath: String = "webhook/chat"
-    val n8nApiKey: String = ""
+    val n8nBaseUrl: String = getRequiredProperty("N8N_BASE_URL").also {
+        Napier.d("ℹ️ n8n Base URL: ${it.substring(0, minOf(10, it.length))}...")
+    }
+    
+    val n8nWebhookPath: String = getRequiredProperty("N8N_WEBHOOK_PATH")
+    val n8nApiKey: String = getRequiredProperty("N8N_API_KEY")
+    
+    // Supabase configuration
+    val supabaseUrl: String = getRequiredProperty("SUPABASE_URL").also { url ->
+        require(url.startsWith("https://")) { "Supabase URL must start with https://" }
+        Napier.d("ℹ️ Supabase URL: ${url.substring(0, minOf(10, url.length))}...")
+    }
+    
+    val supabaseAnonKey: String = getRequiredProperty("SUPABASE_ANON_KEY").also { key ->
+        require(key.startsWith("ey")) { "Invalid Supabase anon key format" }
+        val maskedKey = if (key.length > 10) "${key.substring(0, 5)}...${key.takeLast(5)}" else "***"
+        Napier.d("ℹ️ Supabase key: $maskedKey")
+    }
     
     // Theme and language configuration
     val defaultTheme: String = "system"
