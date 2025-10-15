@@ -34,17 +34,30 @@ data class GalleryState(
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun GalleryScreen(
+    initialPrototypes: List<Prototype> = emptyList(),
+    onPrototypesLoaded: (List<Prototype>) -> Unit = {},
     onNavigateToChat: () -> Unit = {},
     onNavigateToPrototype: (String) -> Unit = {}
 ) {
+    println("📱 GalleryScreen COMPOSING")
+    Napier.d("📱 GalleryScreen is being composed/recomposed")
     // Get SupabaseService from Koin
     val supabaseService = org.koin.compose.koinInject<SupabaseService>()
     val scope = rememberCoroutineScope()
 
-    // State management
-    var state by remember { mutableStateOf(GalleryState(isLoading = true)) }
+    // State management - Initialize with cached prototypes if available
+    val loadKey = remember { System.currentTimeMillis() }
+    var state by remember { 
+        mutableStateOf(
+            if (initialPrototypes.isNotEmpty()) {
+                GalleryState(isLoading = false, prototypes = initialPrototypes)
+            } else {
+                GalleryState(isLoading = false)
+            }
+        )
+    }
 
-    LaunchedEffect(Unit) {
+    LaunchedEffect(loadKey) {
         try {
             if (supabaseService == null) {
                 state = state.copy(
@@ -54,19 +67,22 @@ fun GalleryScreen(
                 return@LaunchedEffect
             }
             
-            state = state.copy(isLoading = true)
+            // Only show loading if we don't have cached prototypes
+            if (initialPrototypes.isEmpty()) {
+                state = state.copy(isLoading = true)
+            }
             
             try {
-                // Fetch prototypes from Supabase
                 val result = supabaseService.listPrototypes()
                 
                 result.fold(
                     onSuccess = { prototypes ->
                         state = state.copy(
                             isLoading = false,
-                            prototypes = prototypes,
-                            error = null
+                            prototypes = prototypes
                         )
+                        // Notify parent about loaded prototypes
+                        onPrototypesLoaded(prototypes)
                         Napier.d("✅ Prototypes loaded: ${prototypes.size}")
                     },
                     onFailure = { error ->
@@ -117,8 +133,12 @@ fun GalleryScreen(
             )
         }
     ) { padding ->
+        println("🔍 STATE CHECK: isLoading=${state.isLoading}, error=${state.error}, prototypes.size=${state.prototypes.size}")
+        Napier.d("🔍 STATE CHECK: isLoading=${state.isLoading}, error=${state.error}, prototypes.size=${state.prototypes.size}")
         when {
-            state.isLoading -> {
+            state.isLoading && state.prototypes.isEmpty() -> {
+                println("⏳ Showing loading indicator")
+                Napier.d("⏳ Showing loading indicator")
                 Box(
                     modifier = Modifier
                         .fillMaxSize()
@@ -220,17 +240,22 @@ fun GalleryScreen(
             }
 
             else -> {
+                println("📋 Rendering LazyColumn with ${state.prototypes.size} prototypes")
+                Napier.d("📋 Rendering LazyColumn with ${state.prototypes.size} prototypes")
                 LazyColumn(
-                    modifier = Modifier
-                        .fillMaxSize()
-                        .padding(padding),
+                    modifier = Modifier.fillMaxSize().padding(padding),
                     contentPadding = PaddingValues(16.dp),
                     verticalArrangement = Arrangement.spacedBy(16.dp)
                 ) {
+                    println("📋 LazyColumn items block executing with ${state.prototypes.size} items")
                     items(state.prototypes) { prototype ->
                         PrototypeItem(
                             prototype = prototype,
-                            onPrototypeClick = { onNavigateToPrototype(prototype.id) },
+                            onPrototypeClick = { 
+                                println("🔘 NAVIGATING TO: ${prototype.name} (id: ${prototype.id})")
+                                Napier.d("🔘 Navigating to prototype: ${prototype.name} (id: ${prototype.id})")
+                                onNavigateToPrototype(prototype.id) 
+                            },
                             onFavoriteClick = {
                                 scope.launch {
                                     try {
@@ -264,6 +289,7 @@ private fun PrototypeItem(
     onPrototypeClick: () -> Unit,
     onFavoriteClick: () -> Unit
 ) {
+    Napier.d("🎨 Rendering PrototypeItem: ${prototype.name} (id: ${prototype.id})")
     val formattedDate = remember(prototype.createdAt) {
         val instant = Instant.fromEpochMilliseconds(prototype.createdAt)
         val localDateTime = instant.toLocalDateTime(TimeZone.currentSystemDefault())
@@ -273,7 +299,11 @@ private fun PrototypeItem(
     var showDetailsDialog by remember { mutableStateOf(false) }
 
     Card(
-        onClick = onPrototypeClick,
+        onClick = {
+            println("🖱️ CARD CLICKED: ${prototype.name} (id: ${prototype.id})")
+            Napier.d("🖱️ Card clicked for prototype: ${prototype.name} (id: ${prototype.id})")
+            onPrototypeClick()
+        },
         modifier = Modifier.fillMaxWidth(),
         elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
     ) {
