@@ -16,7 +16,6 @@ import com.russhwolf.settings.Settings
 import io.github.aakira.napier.DebugAntilog
 import io.github.aakira.napier.Napier
 import io.ktor.client.HttpClient
-import io.ktor.client.engine.cio.CIO
 import io.ktor.client.plugins.HttpTimeout
 import io.ktor.client.plugins.contentnegotiation.ContentNegotiation
 import io.ktor.client.plugins.defaultRequest
@@ -83,36 +82,7 @@ fun initKoin() {
 expect fun initPlatformKoin()
 
 // Helper function to create HTTP client with proper configuration
-private fun createConfiguredHttpClient(): HttpClient {
-    Napier.d("🔧 Creating HTTP Client...")
-    return HttpClient(CIO) {
-        install(ContentNegotiation) {
-            json(Json {
-                prettyPrint = true
-                isLenient = true
-                ignoreUnknownKeys = true
-            })
-        }
-        install(Logging) {
-            level = LogLevel.INFO
-            logger = object : Logger {
-                override fun log(message: String) {
-                    Napier.d("HTTP: $message")
-                }
-            }
-        }
-        install(HttpTimeout) {
-            requestTimeoutMillis = 60_000L
-            connectTimeoutMillis = 60_000L
-            socketTimeoutMillis = 60_000L
-        }
-        defaultRequest {
-            header(HttpHeaders.ContentType, ContentType.Application.Json)
-        }
-    }.also {
-        Napier.d("✅ HTTP Client created successfully")
-    }
-}
+expect fun createConfiguredHttpClient(): HttpClient
 
 // Main application module
 val appModule = module {
@@ -137,7 +107,8 @@ val appModule = module {
         N8nAIService(
             client = get(),
             baseUrl = Config.n8nBaseUrl,
-            webhookPath = Config.n8nWebhookPath
+            webhookPath = Config.n8nWebhookPath,
+            apiKey = Config.n8nApiKey
         )
     }
 
@@ -167,5 +138,3 @@ val appModule = module {
 // ViewModel module
 val viewModelModule = module {
 }
-
-// createHttpClient function is already defined as createConfiguredHttpClient()
