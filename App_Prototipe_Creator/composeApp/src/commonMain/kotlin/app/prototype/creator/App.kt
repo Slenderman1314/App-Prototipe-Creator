@@ -65,9 +65,16 @@ fun App() {
     // Koin is already initialized in Main.kt
     // Wrap with KoinContext to provide Compose-specific Koin context
     KoinContext {
+        // Initialize WebView window eagerly on desktop
+        LaunchedEffect(Unit) {
+            initializeHtmlViewer()
+        }
         AppContent()
     }
 }
+
+// Expect function to initialize platform-specific components
+expect fun initializeHtmlViewer()
 
 @Composable
 private fun AppContent() {
@@ -271,7 +278,13 @@ private fun MainAppContent(
                 println("🖥️ APP.KT: Rendering ChatScreen")
                 @Suppress("ClassName")
                 app.prototype.creator.screens.ChatScreen(
-                    onBack = { currentScreen = Screen.Gallery }
+                    onBack = { currentScreen = Screen.Gallery },
+                    onOpenPrototype = { prototypeId ->
+                        println("🚀 APP.KT: onOpenPrototype called from Chat with ID: $prototypeId")
+                        selectedPrototypeId = prototypeId
+                        prototypeVersion++ // Increment version to force recreation
+                        currentScreen = Screen.PrototypeDetail
+                    }
                 )
             }
             is Screen.PrototypeDetail -> {

@@ -39,8 +39,8 @@ fun PrototypeDetailScreen(
     onBack: () -> Unit,
     version: Int = 0  // Version to force recreation
 ) {
-    // Use timestamp to ensure unique key for each navigation
-    val uniqueKey = remember(prototypeId) { "$prototypeId-${System.currentTimeMillis()}" }
+    // Use only prototypeId as key - version will force component recreation via key() wrapper
+    val uniqueKey = prototypeId
     // Get SupabaseService from Koin
     val supabaseService = org.koin.compose.koinInject<SupabaseService>()
     var prototype by remember(prototypeId) { mutableStateOf<Prototype?>(null) }
@@ -162,13 +162,13 @@ fun PrototypeDetailScreen(
                     ) {
                         // Si hay contenido HTML, mostrarlo renderizado
                         if (!htmlContent.isNullOrEmpty()) {
-                            Napier.d("📄 Rendering HTML content for prototype: ${prototype?.name} with key: $uniqueKey")
-                            // Use key() to force recreation when prototypeId changes
-                            key(uniqueKey) {
+                            Napier.d("📄 Rendering HTML content for prototype: ${prototype?.name} with key: $uniqueKey-v$version")
+                            // Use key() with version to force complete recreation
+                            key("$uniqueKey-v$version") {
                                 HtmlViewer(
                                     htmlContent = htmlContent,
                                     modifier = Modifier.fillMaxSize(),
-                                    key = uniqueKey  // Use unique timestamp-based key
+                                    key = uniqueKey  // Use prototypeId as key for window management
                                 )
                             }
                             
