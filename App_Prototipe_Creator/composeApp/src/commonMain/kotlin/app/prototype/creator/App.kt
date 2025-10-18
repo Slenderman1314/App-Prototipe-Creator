@@ -37,28 +37,28 @@ sealed class Screen(val route: String) {
 
 /**
  * App-wide settings that control the app's appearance and behavior
- * @property isDarkTheme Whether dark theme is enabled
- * @property defaultLanguage The default language code (e.g., "en", "es")
+ * Uses MutableState to enable reactive theme switching
+ * Singleton to ensure all composables observe the same instance
  */
-data class AppSettings(
-    var isDarkTheme: Boolean = false,
-    val defaultLanguage: String = "en"
-) {
-    companion object {
-        val Saver = androidx.compose.runtime.saveable.Saver<AppSettings, Any>(
-            save = { listOf(it.isDarkTheme, it.defaultLanguage) },
-            restore = { 
-                AppSettings(
-                    isDarkTheme = (it as List<*>)[0] as Boolean,
-                    defaultLanguage = (it.getOrNull(1) as? String) ?: "en"
-                )
-            }
-        )
-    }
+object AppSettings {
+    private var _isDarkTheme = mutableStateOf(false)
+    var isDarkTheme: Boolean
+        get() = _isDarkTheme.value
+        set(value) {
+            _isDarkTheme.value = value
+            onThemeChanged?.invoke(value)
+        }
+    
+    var defaultLanguage by mutableStateOf("en")
+    
+    // Callback for theme changes
+    var onThemeChanged: ((Boolean) -> Unit)? = null
 }
 
-// CompositionLocal for theme settings
-val LocalAppSettings = androidx.compose.runtime.staticCompositionLocalOf { AppSettings() }
+// CompositionLocal for theme settings - using compositionLocalOf for reactivity
+val LocalAppSettings = compositionLocalOf<AppSettings> { 
+    AppSettings
+}
 
 @Composable
 fun App() {
@@ -78,7 +78,7 @@ expect fun initializeHtmlViewer()
 
 @Composable
 private fun AppContent() {
-    val appSettings = remember { AppSettings() }
+    val appSettings = AppSettings // Use singleton directly
     var isAppReady by remember { mutableStateOf(false) }
     var initializationError by remember { mutableStateOf<String?>(null) }
     

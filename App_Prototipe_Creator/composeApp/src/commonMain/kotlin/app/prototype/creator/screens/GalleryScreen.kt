@@ -16,6 +16,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
+import app.prototype.creator.components.ThemeToggle
 import app.prototype.creator.data.model.Prototype
 import app.prototype.creator.data.service.SupabaseService
 import io.github.aakira.napier.Napier
@@ -115,6 +116,9 @@ fun GalleryScreen(
             TopAppBar(
                 title = { Text("My Prototypes") },
                 actions = {
+                    ThemeToggle(
+                        modifier = Modifier.padding(horizontal = 8.dp)
+                    )
                     TextButton(onClick = onNavigateToChat) {
                         Column(
                             horizontalAlignment = Alignment.CenterHorizontally,

@@ -9,6 +9,7 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
+import app.prototype.creator.components.ThemeToggle
 import app.prototype.creator.data.model.Prototype
 import app.prototype.creator.data.service.SupabaseService
 import app.prototype.creator.ui.components.HtmlViewer
@@ -92,6 +93,9 @@ fun PrototypeDetailScreen(
                     }
                 },
                 actions = {
+                    ThemeToggle(
+                        modifier = Modifier.padding(horizontal = 8.dp)
+                    )
                     IconButton(onClick = { /* Handle share */ }) {
                         Icon(Icons.Default.Share, contentDescription = "Compartir")
                     }
