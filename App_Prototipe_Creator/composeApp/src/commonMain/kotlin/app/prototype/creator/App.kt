@@ -37,24 +37,11 @@ sealed class Screen(val route: String) {
 
 /**
  * App-wide settings that control the app's appearance and behavior
- * @property isDarkTheme Whether dark theme is enabled
- * @property defaultLanguage The default language code (e.g., "en", "es")
+ * Uses MutableState to make theme changes observable
  */
-data class AppSettings(
-    var isDarkTheme: Boolean = false,
+class AppSettings {
+    var isDarkTheme by mutableStateOf(false)
     val defaultLanguage: String = "en"
-) {
-    companion object {
-        val Saver = androidx.compose.runtime.saveable.Saver<AppSettings, Any>(
-            save = { listOf(it.isDarkTheme, it.defaultLanguage) },
-            restore = { 
-                AppSettings(
-                    isDarkTheme = (it as List<*>)[0] as Boolean,
-                    defaultLanguage = (it.getOrNull(1) as? String) ?: "en"
-                )
-            }
-        )
-    }
 }
 
 // CompositionLocal for theme settings
