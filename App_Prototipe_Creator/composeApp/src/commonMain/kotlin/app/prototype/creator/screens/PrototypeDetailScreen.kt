@@ -181,6 +181,22 @@ fun PrototypeDetailScreen(
                                 LaunchedEffect(uniqueKey) {
                                     kotlinx.coroutines.delay(500)
                                     onBack()
+                            Napier.d("📄 Rendering HTML content for prototype: ${prototype?.name} with key: $uniqueKey-v$version")
+                            // Use key() with version to force complete recreation
+                            key("$uniqueKey-v$version") {
+                                HtmlViewer(
+                                    htmlContent = htmlContent,
+                                    modifier = Modifier.fillMaxSize(),
+                                    key = uniqueKey  // Use prototypeId as key for window management
+                                )
+                            }
+                            
+                            // Auto-navigate back after a short delay to ensure window is opened
+                            // Only on Desktop, where HtmlViewer opens a separate window
+                            if (getPlatform() == "Desktop") {
+                                LaunchedEffect(uniqueKey) {
+                                    kotlinx.coroutines.delay(500) // Wait for window to open
+                                    onBack() // Navigate back immediately so gallery is ready
                                 }
                             }
                         } else {
