@@ -17,3 +17,10 @@ captures
 !*.xcworkspace/contents.xcworkspacedata
 **/xcshareddata/WorkspaceSettings.xcsettings
 node_modules/
+
+# JCEF bundle (too large for GitHub)
+**/jcef-bundle/
+
+# Environment files with sensitive data
+.env
+**/env.properties
