@@ -67,6 +67,21 @@ object Strings {
         Language.ENGLISH to "Try different search terms"
     )
     
+    val sortBy = mapOf(
+        Language.SPANISH to "Ordenar por",
+        Language.ENGLISH to "Sort by"
+    )
+    
+    val sortNewestFirst = mapOf(
+        Language.SPANISH to "Más reciente primero",
+        Language.ENGLISH to "Newest first"
+    )
+    
+    val sortOldestFirst = mapOf(
+        Language.SPANISH to "Más antiguo primero",
+        Language.ENGLISH to "Oldest first"
+    )
+    
     val created = mapOf(
         Language.SPANISH to "Creado",
         Language.ENGLISH to "Created"

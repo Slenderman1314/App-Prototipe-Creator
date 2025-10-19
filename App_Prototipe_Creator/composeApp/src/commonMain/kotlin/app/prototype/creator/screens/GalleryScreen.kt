@@ -6,12 +6,14 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.Chat
 import androidx.compose.material.icons.filled.Add
+import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.DarkMode
 import androidx.compose.material.icons.filled.Favorite
 import androidx.compose.material.icons.filled.LightMode
 import androidx.compose.material.icons.filled.MoreVert
 import androidx.compose.material.icons.filled.Search
+import androidx.compose.material.icons.filled.Sort
 import androidx.compose.material.icons.outlined.FavoriteBorder
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
@@ -32,6 +34,12 @@ import kotlinx.coroutines.launch
 import kotlinx.datetime.Instant
 import kotlinx.datetime.TimeZone
 import kotlinx.datetime.toLocalDateTime
+
+// Enum for sort order
+enum class SortOrder {
+    NEWEST_FIRST,
+    OLDEST_FIRST
+}
 
 // Data class for the gallery state
 data class GalleryState(
@@ -129,15 +137,24 @@ fun GalleryScreen(
     // Search state
     var searchQuery by remember { mutableStateOf("") }
     
-    // Filter prototypes based on search query
-    val filteredPrototypes = remember(state.prototypes, searchQuery) {
-        if (searchQuery.isBlank()) {
+    // Sort state
+    var sortOrder by remember { mutableStateOf(SortOrder.NEWEST_FIRST) }
+    
+    // Filter and sort prototypes
+    val filteredPrototypes = remember(state.prototypes, searchQuery, sortOrder) {
+        val filtered = if (searchQuery.isBlank()) {
             state.prototypes
         } else {
             state.prototypes.filter { prototype ->
                 prototype.name.contains(searchQuery, ignoreCase = true) ||
                 prototype.id.contains(searchQuery, ignoreCase = true)
             }
+        }
+        
+        // Apply sorting
+        when (sortOrder) {
+            SortOrder.NEWEST_FIRST -> filtered.sortedByDescending { it.createdAt }
+            SortOrder.OLDEST_FIRST -> filtered.sortedBy { it.createdAt }
         }
     }
     
@@ -306,32 +323,89 @@ fun GalleryScreen(
                 Column(
                     modifier = Modifier.fillMaxSize().padding(padding)
                 ) {
-                    // Search bar
-                    OutlinedTextField(
-                        value = searchQuery,
-                        onValueChange = { searchQuery = it },
+                    // Search and sort controls
+                    Row(
                         modifier = Modifier
                             .fillMaxWidth()
                             .padding(horizontal = 16.dp, vertical = 8.dp),
-                        placeholder = { Text(Strings.searchPrototypes.localized(currentLanguage)) },
-                        leadingIcon = {
-                            Icon(
-                                imageVector = Icons.Default.Search,
-                                contentDescription = Strings.searchByNameOrId.localized(currentLanguage)
-                            )
-                        },
-                        trailingIcon = {
-                            if (searchQuery.isNotEmpty()) {
-                                IconButton(onClick = { searchQuery = "" }) {
-                                    Icon(
-                                        imageVector = Icons.Default.Close,
-                                        contentDescription = Strings.cancel.localized(currentLanguage)
-                                    )
+                        horizontalArrangement = Arrangement.spacedBy(8.dp),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        // Search bar
+                        OutlinedTextField(
+                            value = searchQuery,
+                            onValueChange = { searchQuery = it },
+                            modifier = Modifier.weight(1f),
+                            placeholder = { Text(Strings.searchPrototypes.localized(currentLanguage)) },
+                            leadingIcon = {
+                                Icon(
+                                    imageVector = Icons.Default.Search,
+                                    contentDescription = Strings.searchByNameOrId.localized(currentLanguage)
+                                )
+                            },
+                            trailingIcon = {
+                                if (searchQuery.isNotEmpty()) {
+                                    IconButton(onClick = { searchQuery = "" }) {
+                                        Icon(
+                                            imageVector = Icons.Default.Close,
+                                            contentDescription = Strings.cancel.localized(currentLanguage)
+                                        )
+                                    }
                                 }
+                            },
+                            singleLine = true
+                        )
+                        
+                        // Sort button with dropdown
+                        var showSortMenu by remember { mutableStateOf(false) }
+                        Box {
+                            IconButton(
+                                onClick = { showSortMenu = true },
+                                modifier = Modifier.size(56.dp)
+                            ) {
+                                Icon(
+                                    imageVector = Icons.Default.Sort,
+                                    contentDescription = Strings.sortBy.localized(currentLanguage)
+                                )
                             }
-                        },
-                        singleLine = true
-                    )
+                            
+                            DropdownMenu(
+                                expanded = showSortMenu,
+                                onDismissRequest = { showSortMenu = false }
+                            ) {
+                                DropdownMenuItem(
+                                    text = { Text(Strings.sortNewestFirst.localized(currentLanguage)) },
+                                    onClick = {
+                                        sortOrder = SortOrder.NEWEST_FIRST
+                                        showSortMenu = false
+                                    },
+                                    leadingIcon = {
+                                        if (sortOrder == SortOrder.NEWEST_FIRST) {
+                                            Icon(
+                                                imageVector = Icons.Default.Check,
+                                                contentDescription = null
+                                            )
+                                        }
+                                    }
+                                )
+                                DropdownMenuItem(
+                                    text = { Text(Strings.sortOldestFirst.localized(currentLanguage)) },
+                                    onClick = {
+                                        sortOrder = SortOrder.OLDEST_FIRST
+                                        showSortMenu = false
+                                    },
+                                    leadingIcon = {
+                                        if (sortOrder == SortOrder.OLDEST_FIRST) {
+                                            Icon(
+                                                imageVector = Icons.Default.Check,
+                                                contentDescription = null
+                                            )
+                                        }
+                                    }
+                                )
+                            }
+                        }
+                    }
                     
                     // Show filtered results or no results message
                     if (filteredPrototypes.isEmpty() && searchQuery.isNotEmpty()) {
