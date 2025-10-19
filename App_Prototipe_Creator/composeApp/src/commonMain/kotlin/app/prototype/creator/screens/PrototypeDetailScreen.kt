@@ -29,26 +29,35 @@ private fun formatDate(timestamp: Long): String {
     return "$day/$month/$year $hour:$minute"
 }
 
+// Platform detection
+expect fun getPlatform(): String
+
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun PrototypeDetailScreen(
     prototypeId: String,
-    onBack: () -> Unit
+    onBack: () -> Unit,
+    version: Int = 0  // Version to force recreation
 ) {
+    // Use only prototypeId as key - version will force component recreation via key() wrapper
+    val uniqueKey = prototypeId
     // Get SupabaseService from Koin
     val supabaseService = org.koin.compose.koinInject<SupabaseService>()
-    var prototype by remember { mutableStateOf<Prototype?>(null) }
-    var isLoading by remember { mutableStateOf(true) }
-    var errorMessage by remember { mutableStateOf<String?>(null) }
+    var prototype by remember(prototypeId) { mutableStateOf<Prototype?>(null) }
+    var isLoading by remember(prototypeId) { mutableStateOf(true) }
+    var errorMessage by remember(prototypeId) { mutableStateOf<String?>(null) }
     val scope = rememberCoroutineScope()
     
-    // Load prototype from Supabase
+    // Load prototype from Supabase - reset state when prototypeId changes
     LaunchedEffect(prototypeId) {
+        Napier.d("🔄 LaunchedEffect triggered for prototypeId: $prototypeId")
+        // Reset state
+        prototype = null
+        isLoading = true
+        errorMessage = null
+        
         scope.launch {
             try {
-                isLoading = true
-                errorMessage = null
-                
                 // Fetch prototype details
                 val result = supabaseService.getPrototype(prototypeId)
                 result.fold(
@@ -153,11 +162,24 @@ fun PrototypeDetailScreen(
                     ) {
                         // Si hay contenido HTML, mostrarlo renderizado
                         if (!htmlContent.isNullOrEmpty()) {
-                            Napier.d("📄 Rendering HTML content for prototype: ${prototype?.name}")
-                            HtmlViewer(
-                                htmlContent = htmlContent,
-                                modifier = Modifier.fillMaxSize()
-                            )
+                            Napier.d("📄 Rendering HTML content for prototype: ${prototype?.name} with key: $uniqueKey-v$version")
+                            // Use key() with version to force complete recreation
+                            key("$uniqueKey-v$version") {
+                                HtmlViewer(
+                                    htmlContent = htmlContent,
+                                    modifier = Modifier.fillMaxSize(),
+                                    key = uniqueKey  // Use prototypeId as key for window management
+                                )
+                            }
+                            
+                            // Auto-navigate back after a short delay to ensure window is opened
+                            // Only on Desktop, where HtmlViewer opens a separate window
+                            if (getPlatform() == "Desktop") {
+                                LaunchedEffect(uniqueKey) {
+                                    kotlinx.coroutines.delay(500) // Wait for window to open
+                                    onBack() // Navigate back immediately so gallery is ready
+                                }
+                            }
                         } else {
                             Napier.w("⚠️ No HTML content available for prototype: ${prototype?.name}")
                             // Fallback: mostrar detalles si no hay HTML

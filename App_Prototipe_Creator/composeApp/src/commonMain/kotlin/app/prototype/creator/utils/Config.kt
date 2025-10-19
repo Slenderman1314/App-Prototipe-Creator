@@ -3,6 +3,11 @@ package app.prototype.creator.utils
 import io.github.aakira.napier.Napier
 
 /**
+ * Platform-specific property getter
+ */
+expect fun getEnvironmentProperty(key: String): String?
+
+/**
  * Application configuration loaded from environment variables.
  * For multiplatform compatibility, environment variables should be set at runtime.
  */
@@ -18,8 +23,8 @@ object Config {
     val databaseName: String = "prototype_db"
     
     private fun getRequiredProperty(key: String): String {
-        return System.getProperty(key)?.takeIf { it.isNotBlank() } ?: run {
-            val error = "$key property is not set or is empty. Please check your .env file."
+        return getEnvironmentProperty(key)?.takeIf { it.isNotBlank() } ?: run {
+            val error = "$key property is not set or is empty. Please check your .env file or BuildConfig."
             Napier.e(error)
             throw IllegalStateException(error)
         }
@@ -31,7 +36,7 @@ object Config {
     }
     
     val n8nWebhookPath: String = getRequiredProperty("N8N_WEBHOOK_PATH")
-    val n8nApiKey: String = getRequiredProperty("N8N_API_KEY")
+    val n8nApiKey: String? = getEnvironmentProperty("N8N_API_KEY")?.takeIf { it.isNotBlank() }
     
     // Supabase configuration
     val supabaseUrl: String = getRequiredProperty("SUPABASE_URL").also { url ->
@@ -63,7 +68,7 @@ object Config {
                 |API_TIMEOUT: $API_TIMEOUT ms
                 |N8N_BASE_URL: $n8nBaseUrl
                 |N8N_WEBHOOK_PATH: $n8nWebhookPath
-                |N8N_API_KEY: ${if (n8nApiKey.isNotBlank()) "[SET]" else "[MISSING]"}
+                |N8N_API_KEY: ${if (n8nApiKey?.isNotBlank() == true) "[SET]" else "[NOT SET]"}
                 |DEFAULT_THEME: $defaultTheme
                 |DEFAULT_LANGUAGE: $defaultLanguage
                 |===========================
