@@ -297,8 +297,9 @@ actual fun HtmlViewer(
     
     // Force reload when theme changes
     LaunchedEffect(key, htmlContent, isDarkTheme) {
-        Napier.d("🪟 LaunchedEffect triggered for key: $windowKey")
-        
+=======
+        Napier.d("🪟 LaunchedEffect triggered for key: $windowKey, isDarkTheme: $isDarkTheme")
+    
         // Ensure window is initialized
         SharedWindowManager.ensureInitialized()
         
@@ -357,7 +358,7 @@ actual fun HtmlViewer(
 /**
  * Injects theme-specific CSS into the HTML content
  */
-private fun injectThemeStyles(htmlContent: String, isDarkTheme: Boolean): String {
+fun injectThemeStyles(htmlContent: String, isDarkTheme: Boolean): String {
     val themeStyles = if (isDarkTheme) {
         """
         <style id="theme-override">
