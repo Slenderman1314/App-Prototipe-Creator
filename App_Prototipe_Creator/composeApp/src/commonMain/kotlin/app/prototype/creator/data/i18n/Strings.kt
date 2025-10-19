@@ -37,9 +37,34 @@ object Strings {
         Language.ENGLISH to "Retry"
     )
     
+    val cancel = mapOf(
+        Language.SPANISH to "Cancelar",
+        Language.ENGLISH to "Cancel"
+    )
+    
     val goToChat = mapOf(
         Language.SPANISH to "Ir al Chat",
         Language.ENGLISH to "Go to Chat"
+    )
+    
+    val searchPrototypes = mapOf(
+        Language.SPANISH to "Buscar prototipos...",
+        Language.ENGLISH to "Search prototypes..."
+    )
+    
+    val searchByNameOrId = mapOf(
+        Language.SPANISH to "Buscar por nombre o ID",
+        Language.ENGLISH to "Search by name or ID"
+    )
+    
+    val noResultsFound = mapOf(
+        Language.SPANISH to "No se encontraron resultados",
+        Language.ENGLISH to "No results found"
+    )
+    
+    val tryDifferentSearch = mapOf(
+        Language.SPANISH to "Intenta con otros términos de búsqueda",
+        Language.ENGLISH to "Try different search terms"
     )
     
     val created = mapOf(
