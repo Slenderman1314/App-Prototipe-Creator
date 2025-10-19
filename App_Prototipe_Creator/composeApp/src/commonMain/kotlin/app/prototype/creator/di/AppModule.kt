@@ -3,6 +3,7 @@ package app.prototype.creator.di
 import app.prototype.creator.data.repository.ChatRepository
 import app.prototype.creator.data.repository.InMemoryChatRepository
 import app.prototype.creator.data.repository.InMemoryPrototypeRepository
+import app.prototype.creator.data.repository.LanguageRepository
 import app.prototype.creator.data.repository.SupabasePrototypeRepository
 import app.prototype.creator.data.repository.PrototypeRepository
 import app.prototype.creator.data.service.AiService
@@ -132,6 +133,10 @@ val appModule = module {
         SupabasePrototypeRepository(
             supabaseService = get()
         )
+    }
+    
+    single {
+        LanguageRepository()
     }
 }
 
