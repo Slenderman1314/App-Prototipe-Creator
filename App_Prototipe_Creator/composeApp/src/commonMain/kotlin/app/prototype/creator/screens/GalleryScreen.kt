@@ -19,8 +19,12 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import app.prototype.creator.LocalAppSettings
+import app.prototype.creator.data.i18n.Strings
+import app.prototype.creator.data.i18n.localized
 import app.prototype.creator.data.model.Prototype
+import app.prototype.creator.data.repository.LanguageRepository
 import app.prototype.creator.data.service.SupabaseService
+import app.prototype.creator.ui.components.LanguageSelector
 import io.github.aakira.napier.Napier
 import kotlinx.coroutines.launch
 import kotlinx.datetime.Instant
@@ -116,6 +120,10 @@ fun GalleryScreen(
     val appSettings = LocalAppSettings.current
     val isDarkTheme = appSettings.isDarkTheme
     
+    // Get language repository
+    val languageRepository = org.koin.compose.koinInject<LanguageRepository>()
+    val currentLanguage by languageRepository.currentLanguage.collectAsState()
+    
     // Update WebView theme when it changes (Desktop only)
     LaunchedEffect(isDarkTheme) {
         try {
@@ -133,15 +141,18 @@ fun GalleryScreen(
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text("My Prototypes") },
+                title = { Text(Strings.galleryTitle.localized(currentLanguage)) },
                 actions = {
+                    // Language selector
+                    LanguageSelector()
+                    
                     // Theme toggle
                     IconButton(onClick = {
                         appSettings.isDarkTheme = !appSettings.isDarkTheme
                     }) {
                         Icon(
                             imageVector = if (appSettings.isDarkTheme) Icons.Default.LightMode else Icons.Default.DarkMode,
-                            contentDescription = if (appSettings.isDarkTheme) "Switch to Light Mode" else "Switch to Dark Mode"
+                            contentDescription = if (appSettings.isDarkTheme) Strings.lightMode.localized(currentLanguage) else Strings.darkMode.localized(currentLanguage)
                         )
                     }
                     
@@ -153,11 +164,11 @@ fun GalleryScreen(
                         ) {
                             Icon(
                                 imageVector = Icons.AutoMirrored.Filled.Chat,
-                                contentDescription = "Chat",
+                                contentDescription = Strings.chatTitle.localized(currentLanguage),
                                 modifier = Modifier.size(20.dp)
                             )
                             Spacer(modifier = Modifier.height(2.dp))
-                            Text("Chat")
+                            Text(Strings.goToChat.localized(currentLanguage))
                         }
                     }
                 }
@@ -190,13 +201,13 @@ fun GalleryScreen(
                     verticalArrangement = Arrangement.Center
                 ) {
                     Text(
-                        text = "Error loading prototypes",
+                        text = Strings.errorLoading.localized(currentLanguage),
                         style = MaterialTheme.typography.titleMedium,
                         color = MaterialTheme.colorScheme.error
                     )
                     Spacer(modifier = Modifier.height(8.dp))
                     Text(
-                        text = state.error ?: "Unknown error",
+                        text = state.error ?: Strings.error.localized(currentLanguage),
                         color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
                     Button(onClick = {
@@ -238,13 +249,15 @@ fun GalleryScreen(
                             } catch (e: Exception) {
                                 state = state.copy(
                                     isLoading = false,
+                                    error = null
                                 )
                             }
                         }
                     }) {
-                        Text("Retry")
+                        Text(Strings.retry.localized(currentLanguage))
                     }
                 }
+
             }
 
             state.prototypes.isEmpty() -> {
@@ -257,13 +270,13 @@ fun GalleryScreen(
                     verticalArrangement = Arrangement.Center
                 ) {
                     Text(
-                        text = "No prototypes yet",
+                        text = Strings.noPrototypes.localized(currentLanguage),
                         style = MaterialTheme.typography.titleMedium,
                         textAlign = TextAlign.Center
                     )
                     Spacer(modifier = Modifier.height(8.dp))
                     Text(
-                        text = "Click the + button to create your first prototype",
+                        text = Strings.createFirst.localized(currentLanguage),
                         textAlign = TextAlign.Center,
                         color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
@@ -282,6 +295,7 @@ fun GalleryScreen(
                     items(state.prototypes) { prototype ->
                         PrototypeItem(
                             prototype = prototype,
+                            currentLanguage = currentLanguage,
                             onPrototypeClick = { 
                                 println("🔘 NAVIGATING TO: ${prototype.name} (id: ${prototype.id})")
                                 Napier.d("🔘 Navigating to prototype: ${prototype.name} (id: ${prototype.id})")
@@ -317,6 +331,7 @@ fun GalleryScreen(
 @Composable
 private fun PrototypeItem(
     prototype: Prototype,
+    currentLanguage: app.prototype.creator.data.model.Language,
     onPrototypeClick: () -> Unit,
     onFavoriteClick: () -> Unit
 ) {
@@ -358,7 +373,7 @@ private fun PrototypeItem(
                     IconButton(onClick = onFavoriteClick) {
                         Icon(
                             imageVector = if (prototype.isFavorite) Icons.Filled.Favorite else Icons.Outlined.FavoriteBorder,
-                            contentDescription = if (prototype.isFavorite) "Remove from favorites" else "Add to favorites",
+                            contentDescription = if (prototype.isFavorite) Strings.unfavorite.localized(currentLanguage) else Strings.favorite.localized(currentLanguage),
                             tint = if (prototype.isFavorite) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.onSurfaceVariant
                         )
                     }
@@ -366,7 +381,7 @@ private fun PrototypeItem(
                     IconButton(onClick = { showDetailsDialog = true }) {
                         Icon(
                             imageVector = Icons.Default.MoreVert,
-                            contentDescription = "Show details"
+                            contentDescription = Strings.prototypeDetails.localized(currentLanguage)
                         )
                     }
                 }
@@ -385,7 +400,7 @@ private fun PrototypeItem(
             Spacer(modifier = Modifier.height(8.dp))
             
             Text(
-                text = "Created: $formattedDate",
+                text = "${Strings.created.localized(currentLanguage)}: $formattedDate",
                 style = MaterialTheme.typography.bodySmall,
                 color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.6f)
             )
@@ -396,22 +411,28 @@ private fun PrototypeItem(
     if (showDetailsDialog) {
         AlertDialog(
             onDismissRequest = { showDetailsDialog = false },
-            title = { Text("Detalles del Prototipo") },
+            title = { Text(Strings.prototypeDetails.localized(currentLanguage)) },
             text = {
                 Column(
                     modifier = Modifier.fillMaxWidth(),
                     verticalArrangement = Arrangement.spacedBy(12.dp)
                 ) {
-                    DetailItem(label = "Nombre de la App", value = prototype.name)
-                    DetailItem(label = "Idea del Usuario", value = prototype.userIdea ?: "No disponible")
-                    DetailItem(label = "Descripción Validada", value = prototype.description.ifEmpty { "No disponible" })
-                    DetailItem(label = "Notas de Validación", value = prototype.validationNotes ?: "No disponible")
-                    DetailItem(label = "Fecha de Creación", value = formattedDate)
+                    val appNameLabel = if (currentLanguage == app.prototype.creator.data.model.Language.SPANISH) "Nombre de la App" else "App Name"
+                    val userIdeaLabel = if (currentLanguage == app.prototype.creator.data.model.Language.SPANISH) "Idea del Usuario" else "User Idea"
+                    val validatedDescLabel = if (currentLanguage == app.prototype.creator.data.model.Language.SPANISH) "Descripción Validada" else "Validated Description"
+                    val validationNotesLabel = if (currentLanguage == app.prototype.creator.data.model.Language.SPANISH) "Notas de Validación" else "Validation Notes"
+                    val creationDateLabel = if (currentLanguage == app.prototype.creator.data.model.Language.SPANISH) "Fecha de Creación" else "Creation Date"
+                    
+                    DetailItem(label = appNameLabel, value = prototype.name)
+                    DetailItem(label = userIdeaLabel, value = prototype.userIdea ?: Strings.notAvailable.localized(currentLanguage))
+                    DetailItem(label = validatedDescLabel, value = prototype.description.ifEmpty { Strings.notAvailable.localized(currentLanguage) })
+                    DetailItem(label = validationNotesLabel, value = prototype.validationNotes ?: Strings.notAvailable.localized(currentLanguage))
+                    DetailItem(label = creationDateLabel, value = formattedDate)
                 }
             },
             confirmButton = {
                 TextButton(onClick = { showDetailsDialog = false }) {
-                    Text("Cerrar")
+                    Text(if (currentLanguage == app.prototype.creator.data.model.Language.SPANISH) "Cerrar" else "Close")
                 }
             }
         )
