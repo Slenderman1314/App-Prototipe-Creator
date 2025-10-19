@@ -206,6 +206,7 @@ kotlin {
                 implementation("org.openjfx:javafx-controls:$javaFxVersion:$javafxPlatform")
                 implementation("org.openjfx:javafx-graphics:$javaFxVersion:$javafxPlatform")
                 implementation("org.openjfx:javafx-swing:$javaFxVersion:$javafxPlatform")
+                implementation("org.openjfx:javafx-media:$javaFxVersion:$javafxPlatform")
             }
         }
         

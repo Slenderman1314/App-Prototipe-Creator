@@ -6,7 +6,9 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.Chat
 import androidx.compose.material.icons.filled.Add
+import androidx.compose.material.icons.filled.DarkMode
 import androidx.compose.material.icons.filled.Favorite
+import androidx.compose.material.icons.filled.LightMode
 import androidx.compose.material.icons.filled.MoreVert
 import androidx.compose.material.icons.outlined.FavoriteBorder
 import androidx.compose.material3.*
@@ -16,6 +18,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
+import app.prototype.creator.LocalAppSettings
 import app.prototype.creator.data.model.Prototype
 import app.prototype.creator.data.service.SupabaseService
 import io.github.aakira.napier.Napier
@@ -109,12 +112,40 @@ fun GalleryScreen(
         }
     }
 
+    // Get app settings for theme toggle
+    val appSettings = LocalAppSettings.current
+    val isDarkTheme = appSettings.isDarkTheme
+    
+    // Update WebView theme when it changes (Desktop only)
+    LaunchedEffect(isDarkTheme) {
+        try {
+            // Call desktop-specific function to update WebView theme
+            val updateFn = Class.forName("app.prototype.creator.ui.components.HtmlViewer_desktopKt")
+                .getDeclaredMethod("updateWebViewTheme", Boolean::class.java)
+            updateFn.invoke(null, isDarkTheme)
+        } catch (e: Exception) {
+            // Not on desktop or function not available
+            Napier.d("ℹ️ WebView theme update not available: ${e.message}")
+        }
+    }
+
     // Main UI
     Scaffold(
         topBar = {
             TopAppBar(
                 title = { Text("My Prototypes") },
                 actions = {
+                    // Theme toggle
+                    IconButton(onClick = {
+                        appSettings.isDarkTheme = !appSettings.isDarkTheme
+                    }) {
+                        Icon(
+                            imageVector = if (appSettings.isDarkTheme) Icons.Default.LightMode else Icons.Default.DarkMode,
+                            contentDescription = if (appSettings.isDarkTheme) "Switch to Light Mode" else "Switch to Dark Mode"
+                        )
+                    }
+                    
+                    // Chat button
                     TextButton(onClick = onNavigateToChat) {
                         Column(
                             horizontalAlignment = Alignment.CenterHorizontally,

@@ -9,6 +9,7 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
+import app.prototype.creator.LocalAppSettings
 import app.prototype.creator.data.model.Prototype
 import app.prototype.creator.data.service.SupabaseService
 import app.prototype.creator.ui.components.HtmlViewer
@@ -151,10 +152,14 @@ fun PrototypeDetailScreen(
                 }
                 prototype != null -> {
                     val htmlContent = prototype?.htmlContent
+                    val appSettings = LocalAppSettings.current
+                    val isDarkTheme = appSettings.isDarkTheme
+                    
                     Napier.d("🔍 Checking HTML content:")
                     Napier.d("   - htmlContent is null: ${htmlContent == null}")
                     Napier.d("   - htmlContent length: ${htmlContent?.length ?: 0}")
                     Napier.d("   - htmlContent isEmpty: ${htmlContent?.isEmpty()}")
+                    Napier.d("   - isDarkTheme: $isDarkTheme")
                     
                     Column(
                         modifier = Modifier
@@ -162,22 +167,20 @@ fun PrototypeDetailScreen(
                     ) {
                         // Si hay contenido HTML, mostrarlo renderizado
                         if (!htmlContent.isNullOrEmpty()) {
-                            Napier.d("📄 Rendering HTML content for prototype: ${prototype?.name} with key: $uniqueKey-v$version")
-                            // Use key() with version to force complete recreation
-                            key("$uniqueKey-v$version") {
-                                HtmlViewer(
-                                    htmlContent = htmlContent,
-                                    modifier = Modifier.fillMaxSize(),
-                                    key = uniqueKey  // Use prototypeId as key for window management
-                                )
-                            }
+                            val viewerKey = "$uniqueKey-${if (isDarkTheme) "dark" else "light"}"
+                            Napier.d("📄 Rendering HTML content for prototype: ${prototype?.name} with key: $viewerKey")
+                            // Use key() with theme to force recreation when theme changes
+                            HtmlViewer(
+                                htmlContent = htmlContent,
+                                modifier = Modifier.fillMaxSize(),
+                                key = uniqueKey  // Use prototypeId as key
+                            )
                             
-                            // Auto-navigate back after a short delay to ensure window is opened
-                            // Only on Desktop, where HtmlViewer opens a separate window
+                            // Auto-navigate back after window opens
                             if (getPlatform() == "Desktop") {
                                 LaunchedEffect(uniqueKey) {
-                                    kotlinx.coroutines.delay(500) // Wait for window to open
-                                    onBack() // Navigate back immediately so gallery is ready
+                                    kotlinx.coroutines.delay(500)
+                                    onBack()
                                 }
                             }
                         } else {
