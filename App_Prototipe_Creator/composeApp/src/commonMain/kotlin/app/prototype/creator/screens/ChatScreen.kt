@@ -15,8 +15,11 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
+import app.prototype.creator.data.i18n.Strings
+import app.prototype.creator.data.i18n.localized
 import app.prototype.creator.data.model.ChatMessage
 import app.prototype.creator.data.repository.ChatRepository
+import app.prototype.creator.data.repository.LanguageRepository
 import app.prototype.creator.data.service.AiService
 import io.github.aakira.napier.Napier
 import kotlinx.coroutines.launch
@@ -30,6 +33,8 @@ fun ChatScreen(
     // Get services from Koin
     val chatRepository = org.koin.compose.koinInject<ChatRepository>()
     val aiService = org.koin.compose.koinInject<AiService>()
+    val languageRepository = org.koin.compose.koinInject<LanguageRepository>()
+    val currentLanguage by languageRepository.currentLanguage.collectAsState()
     
     var messageText by remember { mutableStateOf("") }
     val messages = remember { mutableStateListOf<ChatMessage>() }
@@ -40,23 +45,27 @@ fun ChatScreen(
     // Create a chat session
     val chatId = remember { "chat_${System.currentTimeMillis()}" }
     
-    // Add welcome message
-    LaunchedEffect(Unit) {
-        messages.add(
-            ChatMessage(
-                content = "¡Hola! Soy tu asistente de IA. Describe la aplicación que quieres crear y te ayudaré a generar un prototipo.",
-                isFromUser = false
+    // Add welcome message - update when language changes
+    LaunchedEffect(currentLanguage) {
+        // Clear and add welcome message in current language
+        if (messages.isEmpty() || !messages.first().isFromUser) {
+            messages.clear()
+            messages.add(
+                ChatMessage(
+                    content = Strings.chatWelcomeMessage.localized(currentLanguage),
+                    isFromUser = false
+                )
             )
-        )
+        }
     }
 
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text("AI Assistant") },
+                title = { Text(Strings.chatTitle.localized(currentLanguage)) },
                 navigationIcon = {
                     IconButton(onClick = onBack) {
-                        Icon(Icons.Default.ArrowBack, contentDescription = "Atrás")
+                        Icon(Icons.Default.ArrowBack, contentDescription = Strings.back.localized(currentLanguage))
                     }
                 }
             )
@@ -78,7 +87,7 @@ fun ChatScreen(
                         modifier = Modifier
                             .weight(1f)
                             .padding(end = 8.dp),
-                        placeholder = { Text("Describe tu idea de app...") },
+                        placeholder = { Text(Strings.typeMessage.localized(currentLanguage)) },
                         shape = RoundedCornerShape(24.dp),
                         enabled = !isLoading,
                         maxLines = 4
@@ -155,7 +164,7 @@ fun ChatScreen(
                         modifier = Modifier.size(48.dp),
                         enabled = messageText.isNotBlank() && !isLoading
                     ) {
-                        Icon(Icons.Default.Send, contentDescription = "Enviar")
+                        Icon(Icons.Default.Send, contentDescription = Strings.send.localized(currentLanguage))
                     }
                 }
             }
@@ -172,6 +181,7 @@ fun ChatScreen(
             items(messages) { msg ->
                 MessageBubble(
                     message = msg,
+                    currentLanguage = currentLanguage,
                     onOpenPrototype = { prototypeId ->
                         onOpenPrototype(prototypeId)
                         onBack()
@@ -242,6 +252,7 @@ fun ChatScreen(
 @Composable
 private fun MessageBubble(
     message: ChatMessage,
+    currentLanguage: app.prototype.creator.data.model.Language,
     onOpenPrototype: (String) -> Unit = {},
     onConfirmAction: () -> Unit = {}
 ) {
@@ -414,7 +425,7 @@ private fun MessageBubble(
                                 modifier = Modifier.size(20.dp)
                             )
                             Spacer(modifier = Modifier.width(8.dp))
-                            Text("Sí, continúa")
+                            Text(Strings.yesContinue.localized(currentLanguage))
                         }
                     }
                 }
