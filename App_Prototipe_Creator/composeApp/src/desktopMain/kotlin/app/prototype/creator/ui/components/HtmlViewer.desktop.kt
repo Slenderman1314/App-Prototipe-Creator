@@ -298,6 +298,10 @@ actual fun HtmlViewer(
     // Force reload when theme changes
     LaunchedEffect(key, htmlContent, isDarkTheme) {
         Napier.d("🪟 LaunchedEffect triggered for key: $windowKey, isDarkTheme: $isDarkTheme")
+    Napier.d("🌐 HtmlViewer rendering HTML (length: ${htmlContent.length}) for key: $windowKey")
+    
+    LaunchedEffect(key, htmlContent) {
+        Napier.d("🪟 LaunchedEffect triggered for key: $windowKey")
         
         // Ensure window is initialized
         SharedWindowManager.ensureInitialized()
@@ -334,6 +338,13 @@ actual fun HtmlViewer(
                 } catch (e: Exception) {
                     Napier.e("❌ Error loading HTML", e)
                     e.printStackTrace()
+            // Update content
+            Platform.runLater {
+                try {
+                    Napier.d("📝 Loading HTML content for: $windowKey")
+                    SharedWindowManager.webView!!.engine.loadContent(htmlContent, "text/html")
+                } catch (e: Exception) {
+                    Napier.e("❌ Error loading HTML", e)
                 }
             }
             
@@ -341,6 +352,7 @@ actual fun HtmlViewer(
             SwingUtilities.invokeLater {
                 SharedWindowManager.window?.apply {
                     title = "Prototipo: $windowKey ${if (isDarkTheme) "(Dark)" else "(Light)"}"
+                    title = "Prototipo: $windowKey"
                     isVisible = true
                     toFront()
                     requestFocus()
@@ -662,4 +674,11 @@ private fun injectThemeStyles(htmlContent: String, isDarkTheme: Boolean): String
     
     Napier.d("🔧 Theme injection: isDark=$isDarkTheme, originalLength=${htmlContent.length}, newLength=${result.length}")
     return result
+            }
+        } else {
+            Napier.e("❌ Failed to initialize WebView after $retries retries")
+        }
+    }
+    
+    Box(modifier = modifier.size(0.dp))
 }
