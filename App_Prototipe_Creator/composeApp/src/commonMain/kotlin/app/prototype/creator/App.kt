@@ -12,7 +12,10 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
+import app.prototype.creator.data.i18n.Strings
+import app.prototype.creator.data.i18n.localized
 import app.prototype.creator.data.repository.ChatRepository
+import app.prototype.creator.data.repository.LanguageRepository
 import app.prototype.creator.data.repository.PrototypeRepository
 import app.prototype.creator.data.service.SupabaseService
 import app.prototype.creator.ui.theme.AppTheme
@@ -139,6 +142,9 @@ private fun AppContent() {
 
 @Composable
 private fun LoadingScreen(error: String?) {
+    val languageRepository = koinInject<LanguageRepository>()
+    val currentLanguage by languageRepository.currentLanguage.collectAsState()
+    
     Box(
         modifier = Modifier
             .fillMaxSize()
@@ -152,13 +158,13 @@ private fun LoadingScreen(error: String?) {
             if (error != null) {
                 Icon(
                     imageVector = Icons.Default.Warning,
-                    contentDescription = "Error",
+                    contentDescription = Strings.error.localized(currentLanguage),
                     tint = MaterialTheme.colorScheme.error,
                     modifier = Modifier.size(48.dp)
                 )
                 Spacer(modifier = Modifier.height(16.dp))
                 Text(
-                    text = "Error",
+                    text = Strings.error.localized(currentLanguage),
                     style = MaterialTheme.typography.headlineSmall,
                     color = MaterialTheme.colorScheme.error
                 )
@@ -172,7 +178,7 @@ private fun LoadingScreen(error: String?) {
                 CircularProgressIndicator()
                 Spacer(modifier = Modifier.height(16.dp))
                 Text(
-                    text = "Initializing application...",
+                    text = Strings.initializingApp.localized(currentLanguage),
                     style = MaterialTheme.typography.bodyMedium
                 )
             }
@@ -186,6 +192,9 @@ private fun ErrorScreen(
     onRetry: () -> Unit,
     modifier: Modifier = Modifier
 ) {
+    val languageRepository = koinInject<LanguageRepository>()
+    val currentLanguage by languageRepository.currentLanguage.collectAsState()
+    
     Box(
         modifier = modifier
             .fillMaxSize()
@@ -199,13 +208,13 @@ private fun ErrorScreen(
         ) {
             Icon(
                 Icons.Default.Warning,
-                contentDescription = "Error",
+                contentDescription = Strings.error.localized(currentLanguage),
                 tint = MaterialTheme.colorScheme.error,
                 modifier = Modifier.size(48.dp)
             )
             Spacer(modifier = Modifier.height(16.dp))
             Text(
-                text = "Error",
+                text = Strings.error.localized(currentLanguage),
                 style = MaterialTheme.typography.headlineSmall,
                 color = MaterialTheme.colorScheme.error
             )
@@ -217,7 +226,7 @@ private fun ErrorScreen(
             )
             Spacer(modifier = Modifier.height(24.dp))
             Button(onClick = onRetry) {
-                Text("Try Again")
+                Text(Strings.tryAgain.localized(currentLanguage))
             }
         }
     }
