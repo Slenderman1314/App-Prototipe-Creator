@@ -4,13 +4,15 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.ui.Alignment
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowBack
-import androidx.compose.material.icons.filled.Share
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import app.prototype.creator.LocalAppSettings
+import app.prototype.creator.data.i18n.Strings
+import app.prototype.creator.data.i18n.localized
 import app.prototype.creator.data.model.Prototype
+import app.prototype.creator.data.repository.LanguageRepository
 import app.prototype.creator.data.service.SupabaseService
 import app.prototype.creator.ui.components.HtmlViewer
 import io.github.aakira.napier.Napier
@@ -44,6 +46,8 @@ fun PrototypeDetailScreen(
     val uniqueKey = prototypeId
     // Get SupabaseService from Koin
     val supabaseService = org.koin.compose.koinInject<SupabaseService>()
+    val languageRepository = org.koin.compose.koinInject<LanguageRepository>()
+    val currentLanguage by languageRepository.currentLanguage.collectAsState()
     var prototype by remember(prototypeId) { mutableStateOf<Prototype?>(null) }
     var isLoading by remember(prototypeId) { mutableStateOf(true) }
     var errorMessage by remember(prototypeId) { mutableStateOf<String?>(null) }
@@ -86,15 +90,10 @@ fun PrototypeDetailScreen(
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text(prototype?.name ?: "Cargando...") },
+                title = { Text(prototype?.name ?: Strings.loading.localized(currentLanguage)) },
                 navigationIcon = {
                     IconButton(onClick = onBack) {
-                        Icon(Icons.Default.ArrowBack, contentDescription = "Atrás")
-                    }
-                },
-                actions = {
-                    IconButton(onClick = { /* Handle share */ }) {
-                        Icon(Icons.Default.Share, contentDescription = "Compartir")
+                        Icon(Icons.Default.ArrowBack, contentDescription = Strings.back.localized(currentLanguage))
                     }
                 }
             )
@@ -119,7 +118,7 @@ fun PrototypeDetailScreen(
                         horizontalAlignment = Alignment.CenterHorizontally
                     ) {
                         Text(
-                            text = "Error al cargar el prototipo",
+                            text = Strings.errorLoading.localized(currentLanguage),
                             style = MaterialTheme.typography.titleMedium,
                             color = MaterialTheme.colorScheme.error
                         )
@@ -146,7 +145,7 @@ fun PrototypeDetailScreen(
                                 )
                             }
                         }) {
-                            Text("Reintentar")
+                            Text(Strings.retry.localized(currentLanguage))
                         }
                     }
                 }
@@ -211,20 +210,20 @@ fun PrototypeDetailScreen(
                                 ) {
                                     Column(modifier = Modifier.padding(16.dp)) {
                                         Text(
-                                            text = "Detalles del Prototipo",
+                                            text = Strings.prototypeDetails.localized(currentLanguage),
                                             style = MaterialTheme.typography.titleMedium
                                         )
                                         Spacer(modifier = Modifier.height(8.dp))
                                         
                                         Text(
-                                            text = "URL: ${prototype?.previewUrl ?: "No disponible"}",
+                                            text = "${Strings.url.localized(currentLanguage)}: ${prototype?.previewUrl ?: Strings.notAvailable.localized(currentLanguage)}",
                                             style = MaterialTheme.typography.bodySmall
                                         )
                                         
                                         Spacer(modifier = Modifier.height(8.dp))
                                         
                                         Text(
-                                            text = "Creado: ${formatDate(prototype?.createdAt ?: 0)}",
+                                            text = "${Strings.created.localized(currentLanguage)}: ${formatDate(prototype?.createdAt ?: 0)}",
                                             style = MaterialTheme.typography.bodySmall,
                                             color = MaterialTheme.colorScheme.onSurfaceVariant
                                         )

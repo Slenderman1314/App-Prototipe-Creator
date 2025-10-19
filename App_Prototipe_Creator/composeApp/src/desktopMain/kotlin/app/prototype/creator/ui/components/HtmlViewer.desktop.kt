@@ -297,8 +297,9 @@ actual fun HtmlViewer(
     
     // Force reload when theme changes
     LaunchedEffect(key, htmlContent, isDarkTheme) {
+=======
         Napier.d("🪟 LaunchedEffect triggered for key: $windowKey, isDarkTheme: $isDarkTheme")
-        
+    
         // Ensure window is initialized
         SharedWindowManager.ensureInitialized()
         
