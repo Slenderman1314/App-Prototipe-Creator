@@ -6,10 +6,14 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.Chat
 import androidx.compose.material.icons.filled.Add
+import androidx.compose.material.icons.filled.Check
+import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.DarkMode
 import androidx.compose.material.icons.filled.Favorite
 import androidx.compose.material.icons.filled.LightMode
 import androidx.compose.material.icons.filled.MoreVert
+import androidx.compose.material.icons.filled.Search
+import androidx.compose.material.icons.filled.Sort
 import androidx.compose.material.icons.outlined.FavoriteBorder
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
@@ -30,6 +34,12 @@ import kotlinx.coroutines.launch
 import kotlinx.datetime.Instant
 import kotlinx.datetime.TimeZone
 import kotlinx.datetime.toLocalDateTime
+
+// Enum for sort order
+enum class SortOrder {
+    NEWEST_FIRST,
+    OLDEST_FIRST
+}
 
 // Data class for the gallery state
 data class GalleryState(
@@ -123,6 +133,30 @@ fun GalleryScreen(
     // Get language repository
     val languageRepository = org.koin.compose.koinInject<LanguageRepository>()
     val currentLanguage by languageRepository.currentLanguage.collectAsState()
+    
+    // Search state
+    var searchQuery by remember { mutableStateOf("") }
+    
+    // Sort state
+    var sortOrder by remember { mutableStateOf(SortOrder.NEWEST_FIRST) }
+    
+    // Filter and sort prototypes
+    val filteredPrototypes = remember(state.prototypes, searchQuery, sortOrder) {
+        val filtered = if (searchQuery.isBlank()) {
+            state.prototypes
+        } else {
+            state.prototypes.filter { prototype ->
+                prototype.name.contains(searchQuery, ignoreCase = true) ||
+                prototype.id.contains(searchQuery, ignoreCase = true)
+            }
+        }
+        
+        // Apply sorting
+        when (sortOrder) {
+            SortOrder.NEWEST_FIRST -> filtered.sortedByDescending { it.createdAt }
+            SortOrder.OLDEST_FIRST -> filtered.sortedBy { it.createdAt }
+        }
+    }
     
     // Update WebView theme when it changes (Desktop only)
     LaunchedEffect(isDarkTheme) {
@@ -284,19 +318,137 @@ fun GalleryScreen(
             }
 
             else -> {
-                println("📋 Rendering LazyColumn with ${state.prototypes.size} prototypes")
-                Napier.d("📋 Rendering LazyColumn with ${state.prototypes.size} prototypes")
-                LazyColumn(
-                    modifier = Modifier.fillMaxSize().padding(padding),
-                    contentPadding = PaddingValues(16.dp),
-                    verticalArrangement = Arrangement.spacedBy(16.dp)
+                println("📋 Rendering with ${state.prototypes.size} prototypes, ${filteredPrototypes.size} filtered")
+                Napier.d("📋 Rendering with ${state.prototypes.size} prototypes, ${filteredPrototypes.size} filtered")
+                Column(
+                    modifier = Modifier.fillMaxSize().padding(padding)
                 ) {
-                    println("📋 LazyColumn items block executing with ${state.prototypes.size} items")
-                    items(state.prototypes) { prototype ->
-                        PrototypeItem(
-                            prototype = prototype,
-                            currentLanguage = currentLanguage,
-                            onPrototypeClick = { 
+                    // Search and sort controls
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(horizontal = 16.dp, vertical = 8.dp),
+                        horizontalArrangement = Arrangement.spacedBy(8.dp),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        // Search bar
+                        OutlinedTextField(
+                            value = searchQuery,
+                            onValueChange = { searchQuery = it },
+                            modifier = Modifier.weight(1f),
+                            placeholder = { Text(Strings.searchPrototypes.localized(currentLanguage)) },
+                            leadingIcon = {
+                                Icon(
+                                    imageVector = Icons.Default.Search,
+                                    contentDescription = Strings.searchByNameOrId.localized(currentLanguage)
+                                )
+                            },
+                            trailingIcon = {
+                                if (searchQuery.isNotEmpty()) {
+                                    IconButton(onClick = { searchQuery = "" }) {
+                                        Icon(
+                                            imageVector = Icons.Default.Close,
+                                            contentDescription = Strings.cancel.localized(currentLanguage)
+                                        )
+                                    }
+                                }
+                            },
+                            singleLine = true
+                        )
+                        
+                        // Sort button with dropdown
+                        var showSortMenu by remember { mutableStateOf(false) }
+                        Box {
+                            IconButton(
+                                onClick = { showSortMenu = true },
+                                modifier = Modifier.size(56.dp)
+                            ) {
+                                Icon(
+                                    imageVector = Icons.Default.Sort,
+                                    contentDescription = Strings.sortBy.localized(currentLanguage)
+                                )
+                            }
+                            
+                            DropdownMenu(
+                                expanded = showSortMenu,
+                                onDismissRequest = { showSortMenu = false }
+                            ) {
+                                DropdownMenuItem(
+                                    text = { Text(Strings.sortNewestFirst.localized(currentLanguage)) },
+                                    onClick = {
+                                        sortOrder = SortOrder.NEWEST_FIRST
+                                        showSortMenu = false
+                                    },
+                                    leadingIcon = {
+                                        if (sortOrder == SortOrder.NEWEST_FIRST) {
+                                            Icon(
+                                                imageVector = Icons.Default.Check,
+                                                contentDescription = null
+                                            )
+                                        }
+                                    }
+                                )
+                                DropdownMenuItem(
+                                    text = { Text(Strings.sortOldestFirst.localized(currentLanguage)) },
+                                    onClick = {
+                                        sortOrder = SortOrder.OLDEST_FIRST
+                                        showSortMenu = false
+                                    },
+                                    leadingIcon = {
+                                        if (sortOrder == SortOrder.OLDEST_FIRST) {
+                                            Icon(
+                                                imageVector = Icons.Default.Check,
+                                                contentDescription = null
+                                            )
+                                        }
+                                    }
+                                )
+                            }
+                        }
+                    }
+                    
+                    // Show filtered results or no results message
+                    if (filteredPrototypes.isEmpty() && searchQuery.isNotEmpty()) {
+                        // No results found
+                        Column(
+                            modifier = Modifier
+                                .fillMaxSize()
+                                .padding(16.dp),
+                            horizontalAlignment = Alignment.CenterHorizontally,
+                            verticalArrangement = Arrangement.Center
+                        ) {
+                            Icon(
+                                imageVector = Icons.Default.Search,
+                                contentDescription = null,
+                                modifier = Modifier.size(64.dp),
+                                tint = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.5f)
+                            )
+                            Spacer(modifier = Modifier.height(16.dp))
+                            Text(
+                                text = Strings.noResultsFound.localized(currentLanguage),
+                                style = MaterialTheme.typography.titleMedium,
+                                textAlign = TextAlign.Center
+                            )
+                            Spacer(modifier = Modifier.height(8.dp))
+                            Text(
+                                text = Strings.tryDifferentSearch.localized(currentLanguage),
+                                textAlign = TextAlign.Center,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant
+                            )
+                        }
+                    } else {
+                        // Show filtered prototypes
+                        LazyColumn(
+                            modifier = Modifier.fillMaxSize(),
+                            contentPadding = PaddingValues(16.dp),
+                            verticalArrangement = Arrangement.spacedBy(16.dp)
+                        ) {
+                            println("📋 LazyColumn items block executing with ${filteredPrototypes.size} items")
+                            items(filteredPrototypes) { prototype ->
+                                PrototypeItem(
+                                    prototype = prototype,
+                                    currentLanguage = currentLanguage,
+                                    onPrototypeClick = { 
                                 println("🔘 NAVIGATING TO: ${prototype.name} (id: ${prototype.id})")
                                 Napier.d("🔘 Navigating to prototype: ${prototype.name} (id: ${prototype.id})")
                                 onNavigateToPrototype(prototype.id) 
@@ -321,6 +473,8 @@ fun GalleryScreen(
                                 }
                             }
                         )
+                    }
+                        }
                     }
                 }
             }
