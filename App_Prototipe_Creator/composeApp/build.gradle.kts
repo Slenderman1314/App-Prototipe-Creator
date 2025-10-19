@@ -1,11 +1,10 @@
 import org.jetbrains.compose.desktop.application.dsl.TargetFormat
 import org.jetbrains.kotlin.gradle.ExperimentalKotlinGradlePluginApi
 import org.jetbrains.kotlin.gradle.dsl.JvmTarget
-import org.jetbrains.kotlin.gradle.plugin.mpp.KotlinNativeTarget
 
 plugins {
     kotlin("multiplatform") version "2.0.0"
-    id("com.android.application") version "8.1.0"
+    id("com.android.application") version "8.12.0"
     id("org.jetbrains.compose") version "1.6.11"
     id("org.jetbrains.kotlin.plugin.compose") version "2.0.0"
     kotlin("plugin.serialization") version "2.0.0"
@@ -27,6 +26,17 @@ val napierVersion = "2.6.1"
 val settingsVersion = "1.1.1"
 val coroutinesVersion = "1.7.3"
 val serializationVersion = "1.6.3"
+// JavaFX version used for Desktop WebView
+val javaFxVersion = "21.0.3"
+
+// Detect platform classifier for OpenJFX artifacts
+val os = org.gradle.internal.os.OperatingSystem.current()
+val javafxPlatform = when {
+    os.isWindows -> "win"
+    os.isMacOsX -> if (System.getProperty("os.arch") == "aarch64") "mac-aarch64" else "mac"
+    os.isLinux -> "linux"
+    else -> throw GradleException("Unsupported OS for JavaFX")
+}
 
 // Configure Android
 android {
@@ -189,6 +199,13 @@ kotlin {
                 
                 // Coroutines
                 implementation(libs.kotlinx.coroutines.swing)
+
+                // JavaFX (WebView + Swing bridge) for Desktop HTML rendering
+                implementation("org.openjfx:javafx-base:$javaFxVersion:$javafxPlatform")
+                implementation("org.openjfx:javafx-web:$javaFxVersion:$javafxPlatform")
+                implementation("org.openjfx:javafx-controls:$javaFxVersion:$javafxPlatform")
+                implementation("org.openjfx:javafx-graphics:$javaFxVersion:$javafxPlatform")
+                implementation("org.openjfx:javafx-swing:$javaFxVersion:$javafxPlatform")
             }
         }
         
