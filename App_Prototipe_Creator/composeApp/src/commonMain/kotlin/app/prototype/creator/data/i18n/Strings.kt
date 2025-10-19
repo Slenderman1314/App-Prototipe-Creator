@@ -37,9 +37,49 @@ object Strings {
         Language.ENGLISH to "Retry"
     )
     
+    val cancel = mapOf(
+        Language.SPANISH to "Cancelar",
+        Language.ENGLISH to "Cancel"
+    )
+    
     val goToChat = mapOf(
         Language.SPANISH to "Ir al Chat",
         Language.ENGLISH to "Go to Chat"
+    )
+    
+    val searchPrototypes = mapOf(
+        Language.SPANISH to "Buscar prototipos...",
+        Language.ENGLISH to "Search prototypes..."
+    )
+    
+    val searchByNameOrId = mapOf(
+        Language.SPANISH to "Buscar por nombre o ID",
+        Language.ENGLISH to "Search by name or ID"
+    )
+    
+    val noResultsFound = mapOf(
+        Language.SPANISH to "No se encontraron resultados",
+        Language.ENGLISH to "No results found"
+    )
+    
+    val tryDifferentSearch = mapOf(
+        Language.SPANISH to "Intenta con otros términos de búsqueda",
+        Language.ENGLISH to "Try different search terms"
+    )
+    
+    val sortBy = mapOf(
+        Language.SPANISH to "Ordenar por",
+        Language.ENGLISH to "Sort by"
+    )
+    
+    val sortNewestFirst = mapOf(
+        Language.SPANISH to "Más reciente primero",
+        Language.ENGLISH to "Newest first"
+    )
+    
+    val sortOldestFirst = mapOf(
+        Language.SPANISH to "Más antiguo primero",
+        Language.ENGLISH to "Oldest first"
     )
     
     val created = mapOf(
@@ -66,26 +106,19 @@ object Strings {
         Language.SPANISH to "¿Eliminar prototipo?",
         Language.ENGLISH to "Delete prototype?"
     )
-    
     val confirmDeleteMessage = mapOf(
         Language.SPANISH to "Esta acción no se puede deshacer",
         Language.ENGLISH to "This action cannot be undone"
     )
     
-    val cancel = mapOf(
-        Language.SPANISH to "Cancelar",
-        Language.ENGLISH to "Cancel"
-    )
-    
-    // Chat Screen
-    val chatTitle = mapOf(
-        Language.SPANISH to "Chat de Prototipos",
-        Language.ENGLISH to "Prototype Chat"
-    )
-    
     val back = mapOf(
         Language.SPANISH to "Atrás",
         Language.ENGLISH to "Back"
+    )
+    
+    val chatTitle = mapOf(
+        Language.SPANISH to "Chat de Prototipos",
+        Language.ENGLISH to "Prototype Chat"
     )
     
     val typeMessage = mapOf(
