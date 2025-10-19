@@ -6,7 +6,9 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.Chat
 import androidx.compose.material.icons.filled.Add
+import androidx.compose.material.icons.filled.DarkMode
 import androidx.compose.material.icons.filled.Favorite
+import androidx.compose.material.icons.filled.LightMode
 import androidx.compose.material.icons.filled.MoreVert
 import androidx.compose.material.icons.outlined.FavoriteBorder
 import androidx.compose.material3.*
@@ -16,6 +18,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
+import app.prototype.creator.LocalAppSettings
 import app.prototype.creator.data.model.Prototype
 import app.prototype.creator.data.service.SupabaseService
 import io.github.aakira.napier.Napier
@@ -34,17 +37,30 @@ data class GalleryState(
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun GalleryScreen(
+    initialPrototypes: List<Prototype> = emptyList(),
+    onPrototypesLoaded: (List<Prototype>) -> Unit = {},
     onNavigateToChat: () -> Unit = {},
     onNavigateToPrototype: (String) -> Unit = {}
 ) {
+    println("📱 GalleryScreen COMPOSING")
+    Napier.d("📱 GalleryScreen is being composed/recomposed")
     // Get SupabaseService from Koin
     val supabaseService = org.koin.compose.koinInject<SupabaseService>()
     val scope = rememberCoroutineScope()
 
-    // State management
-    var state by remember { mutableStateOf(GalleryState(isLoading = true)) }
+    // State management - Initialize with cached prototypes if available
+    val loadKey = remember { System.currentTimeMillis() }
+    var state by remember { 
+        mutableStateOf(
+            if (initialPrototypes.isNotEmpty()) {
+                GalleryState(isLoading = false, prototypes = initialPrototypes)
+            } else {
+                GalleryState(isLoading = false)
+            }
+        )
+    }
 
-    LaunchedEffect(Unit) {
+    LaunchedEffect(loadKey) {
         try {
             if (supabaseService == null) {
                 state = state.copy(
@@ -54,19 +70,22 @@ fun GalleryScreen(
                 return@LaunchedEffect
             }
             
-            state = state.copy(isLoading = true)
+            // Only show loading if we don't have cached prototypes
+            if (initialPrototypes.isEmpty()) {
+                state = state.copy(isLoading = true)
+            }
             
             try {
-                // Fetch prototypes from Supabase
                 val result = supabaseService.listPrototypes()
                 
                 result.fold(
                     onSuccess = { prototypes ->
                         state = state.copy(
                             isLoading = false,
-                            prototypes = prototypes,
-                            error = null
+                            prototypes = prototypes
                         )
+                        // Notify parent about loaded prototypes
+                        onPrototypesLoaded(prototypes)
                         Napier.d("✅ Prototypes loaded: ${prototypes.size}")
                     },
                     onFailure = { error ->
@@ -93,12 +112,40 @@ fun GalleryScreen(
         }
     }
 
+    // Get app settings for theme toggle
+    val appSettings = LocalAppSettings.current
+    val isDarkTheme = appSettings.isDarkTheme
+    
+    // Update WebView theme when it changes (Desktop only)
+    LaunchedEffect(isDarkTheme) {
+        try {
+            // Call desktop-specific function to update WebView theme
+            val updateFn = Class.forName("app.prototype.creator.ui.components.HtmlViewer_desktopKt")
+                .getDeclaredMethod("updateWebViewTheme", Boolean::class.java)
+            updateFn.invoke(null, isDarkTheme)
+        } catch (e: Exception) {
+            // Not on desktop or function not available
+            Napier.d("ℹ️ WebView theme update not available: ${e.message}")
+        }
+    }
+
     // Main UI
     Scaffold(
         topBar = {
             TopAppBar(
                 title = { Text("My Prototypes") },
                 actions = {
+                    // Theme toggle
+                    IconButton(onClick = {
+                        appSettings.isDarkTheme = !appSettings.isDarkTheme
+                    }) {
+                        Icon(
+                            imageVector = if (appSettings.isDarkTheme) Icons.Default.LightMode else Icons.Default.DarkMode,
+                            contentDescription = if (appSettings.isDarkTheme) "Switch to Light Mode" else "Switch to Dark Mode"
+                        )
+                    }
+                    
+                    // Chat button
                     TextButton(onClick = onNavigateToChat) {
                         Column(
                             horizontalAlignment = Alignment.CenterHorizontally,
@@ -117,8 +164,12 @@ fun GalleryScreen(
             )
         }
     ) { padding ->
+        println("🔍 STATE CHECK: isLoading=${state.isLoading}, error=${state.error}, prototypes.size=${state.prototypes.size}")
+        Napier.d("🔍 STATE CHECK: isLoading=${state.isLoading}, error=${state.error}, prototypes.size=${state.prototypes.size}")
         when {
-            state.isLoading -> {
+            state.isLoading && state.prototypes.isEmpty() -> {
+                println("⏳ Showing loading indicator")
+                Napier.d("⏳ Showing loading indicator")
                 Box(
                     modifier = Modifier
                         .fillMaxSize()
@@ -220,17 +271,22 @@ fun GalleryScreen(
             }
 
             else -> {
+                println("📋 Rendering LazyColumn with ${state.prototypes.size} prototypes")
+                Napier.d("📋 Rendering LazyColumn with ${state.prototypes.size} prototypes")
                 LazyColumn(
-                    modifier = Modifier
-                        .fillMaxSize()
-                        .padding(padding),
+                    modifier = Modifier.fillMaxSize().padding(padding),
                     contentPadding = PaddingValues(16.dp),
                     verticalArrangement = Arrangement.spacedBy(16.dp)
                 ) {
+                    println("📋 LazyColumn items block executing with ${state.prototypes.size} items")
                     items(state.prototypes) { prototype ->
                         PrototypeItem(
                             prototype = prototype,
-                            onPrototypeClick = { onNavigateToPrototype(prototype.id) },
+                            onPrototypeClick = { 
+                                println("🔘 NAVIGATING TO: ${prototype.name} (id: ${prototype.id})")
+                                Napier.d("🔘 Navigating to prototype: ${prototype.name} (id: ${prototype.id})")
+                                onNavigateToPrototype(prototype.id) 
+                            },
                             onFavoriteClick = {
                                 scope.launch {
                                     try {
@@ -264,6 +320,7 @@ private fun PrototypeItem(
     onPrototypeClick: () -> Unit,
     onFavoriteClick: () -> Unit
 ) {
+    Napier.d("🎨 Rendering PrototypeItem: ${prototype.name} (id: ${prototype.id})")
     val formattedDate = remember(prototype.createdAt) {
         val instant = Instant.fromEpochMilliseconds(prototype.createdAt)
         val localDateTime = instant.toLocalDateTime(TimeZone.currentSystemDefault())
@@ -273,7 +330,11 @@ private fun PrototypeItem(
     var showDetailsDialog by remember { mutableStateOf(false) }
 
     Card(
-        onClick = onPrototypeClick,
+        onClick = {
+            println("🖱️ CARD CLICKED: ${prototype.name} (id: ${prototype.id})")
+            Napier.d("🖱️ Card clicked for prototype: ${prototype.name} (id: ${prototype.id})")
+            onPrototypeClick()
+        },
         modifier = Modifier.fillMaxWidth(),
         elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
     ) {

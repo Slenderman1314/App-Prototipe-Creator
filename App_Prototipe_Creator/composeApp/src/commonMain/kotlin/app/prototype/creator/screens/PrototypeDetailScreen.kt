@@ -9,6 +9,7 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
+import app.prototype.creator.LocalAppSettings
 import app.prototype.creator.data.model.Prototype
 import app.prototype.creator.data.service.SupabaseService
 import app.prototype.creator.ui.components.HtmlViewer
@@ -29,26 +30,35 @@ private fun formatDate(timestamp: Long): String {
     return "$day/$month/$year $hour:$minute"
 }
 
+// Platform detection
+expect fun getPlatform(): String
+
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun PrototypeDetailScreen(
     prototypeId: String,
-    onBack: () -> Unit
+    onBack: () -> Unit,
+    version: Int = 0  // Version to force recreation
 ) {
+    // Use only prototypeId as key - version will force component recreation via key() wrapper
+    val uniqueKey = prototypeId
     // Get SupabaseService from Koin
     val supabaseService = org.koin.compose.koinInject<SupabaseService>()
-    var prototype by remember { mutableStateOf<Prototype?>(null) }
-    var isLoading by remember { mutableStateOf(true) }
-    var errorMessage by remember { mutableStateOf<String?>(null) }
+    var prototype by remember(prototypeId) { mutableStateOf<Prototype?>(null) }
+    var isLoading by remember(prototypeId) { mutableStateOf(true) }
+    var errorMessage by remember(prototypeId) { mutableStateOf<String?>(null) }
     val scope = rememberCoroutineScope()
     
-    // Load prototype from Supabase
+    // Load prototype from Supabase - reset state when prototypeId changes
     LaunchedEffect(prototypeId) {
+        Napier.d("🔄 LaunchedEffect triggered for prototypeId: $prototypeId")
+        // Reset state
+        prototype = null
+        isLoading = true
+        errorMessage = null
+        
         scope.launch {
             try {
-                isLoading = true
-                errorMessage = null
-                
                 // Fetch prototype details
                 val result = supabaseService.getPrototype(prototypeId)
                 result.fold(
@@ -142,10 +152,14 @@ fun PrototypeDetailScreen(
                 }
                 prototype != null -> {
                     val htmlContent = prototype?.htmlContent
+                    val appSettings = LocalAppSettings.current
+                    val isDarkTheme = appSettings.isDarkTheme
+                    
                     Napier.d("🔍 Checking HTML content:")
                     Napier.d("   - htmlContent is null: ${htmlContent == null}")
                     Napier.d("   - htmlContent length: ${htmlContent?.length ?: 0}")
                     Napier.d("   - htmlContent isEmpty: ${htmlContent?.isEmpty()}")
+                    Napier.d("   - isDarkTheme: $isDarkTheme")
                     
                     Column(
                         modifier = Modifier
@@ -153,11 +167,22 @@ fun PrototypeDetailScreen(
                     ) {
                         // Si hay contenido HTML, mostrarlo renderizado
                         if (!htmlContent.isNullOrEmpty()) {
-                            Napier.d("📄 Rendering HTML content for prototype: ${prototype?.name}")
+                            val viewerKey = "$uniqueKey-${if (isDarkTheme) "dark" else "light"}"
+                            Napier.d("📄 Rendering HTML content for prototype: ${prototype?.name} with key: $viewerKey")
+                            // Use key() with theme to force recreation when theme changes
                             HtmlViewer(
                                 htmlContent = htmlContent,
-                                modifier = Modifier.fillMaxSize()
+                                modifier = Modifier.fillMaxSize(),
+                                key = uniqueKey  // Use prototypeId as key
                             )
+                            
+                            // Auto-navigate back after window opens
+                            if (getPlatform() == "Desktop") {
+                                LaunchedEffect(uniqueKey) {
+                                    kotlinx.coroutines.delay(500)
+                                    onBack()
+                                }
+                            }
                         } else {
                             Napier.w("⚠️ No HTML content available for prototype: ${prototype?.name}")
                             // Fallback: mostrar detalles si no hay HTML
