@@ -91,26 +91,19 @@ object Strings {
         Language.SPANISH to "¿Eliminar prototipo?",
         Language.ENGLISH to "Delete prototype?"
     )
-    
     val confirmDeleteMessage = mapOf(
         Language.SPANISH to "Esta acción no se puede deshacer",
         Language.ENGLISH to "This action cannot be undone"
     )
     
-    val cancel = mapOf(
-        Language.SPANISH to "Cancelar",
-        Language.ENGLISH to "Cancel"
-    )
-    
-    // Chat Screen
-    val chatTitle = mapOf(
-        Language.SPANISH to "Chat de Prototipos",
-        Language.ENGLISH to "Prototype Chat"
-    )
-    
     val back = mapOf(
         Language.SPANISH to "Atrás",
         Language.ENGLISH to "Back"
+    )
+    
+    val chatTitle = mapOf(
+        Language.SPANISH to "Chat de Prototipos",
+        Language.ENGLISH to "Prototype Chat"
     )
     
     val typeMessage = mapOf(
