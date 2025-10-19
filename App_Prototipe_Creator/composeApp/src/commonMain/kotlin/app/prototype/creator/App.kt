@@ -17,6 +17,7 @@ import app.prototype.creator.data.repository.PrototypeRepository
 import app.prototype.creator.data.service.SupabaseService
 import app.prototype.creator.ui.theme.AppTheme
 import io.github.aakira.napier.Napier
+import org.koin.compose.KoinContext
 import org.koin.compose.koinInject
 
 // Koin is initialized in Main.kt
@@ -36,24 +37,11 @@ sealed class Screen(val route: String) {
 
 /**
  * App-wide settings that control the app's appearance and behavior
- * @property isDarkTheme Whether dark theme is enabled
- * @property defaultLanguage The default language code (e.g., "en", "es")
+ * Uses MutableState to make theme changes observable
  */
-data class AppSettings(
-    var isDarkTheme: Boolean = false,
+class AppSettings {
+    var isDarkTheme by mutableStateOf(false)
     val defaultLanguage: String = "en"
-) {
-    companion object {
-        val Saver = androidx.compose.runtime.saveable.Saver<AppSettings, Any>(
-            save = { listOf(it.isDarkTheme, it.defaultLanguage) },
-            restore = { 
-                AppSettings(
-                    isDarkTheme = (it as List<*>)[0] as Boolean,
-                    defaultLanguage = (it.getOrNull(1) as? String) ?: "en"
-                )
-            }
-        )
-    }
 }
 
 // CompositionLocal for theme settings
@@ -62,8 +50,18 @@ val LocalAppSettings = androidx.compose.runtime.staticCompositionLocalOf { AppSe
 @Composable
 fun App() {
     // Koin is already initialized in Main.kt
-    AppContent()
+    // Wrap with KoinContext to provide Compose-specific Koin context
+    KoinContext {
+        // Initialize WebView window eagerly on desktop
+        LaunchedEffect(Unit) {
+            initializeHtmlViewer()
+        }
+        AppContent()
+    }
 }
+
+// Expect function to initialize platform-specific components
+expect fun initializeHtmlViewer()
 
 @Composable
 private fun AppContent() {
@@ -233,35 +231,65 @@ private fun MainAppContent(
 ) {
     var currentScreen by remember { mutableStateOf<Screen>(Screen.Gallery) }
     var selectedPrototypeId by remember { mutableStateOf<String?>(null) }
+    // Add a version counter to force recreation even when opening the same prototype
+    var prototypeVersion by remember { mutableStateOf(0) }
+    // Cache gallery state to survive screen changes
+    var cachedPrototypes by remember { mutableStateOf<List<app.prototype.creator.data.model.Prototype>>(emptyList()) }
     
     CompositionLocalProvider(
         LocalAppSettings provides appSettings
     ) {
+        println("🖥️ APP.KT: Current screen = $currentScreen")
         when (currentScreen) {
             is Screen.Gallery -> {
+                println("🖥️ APP.KT: Rendering GalleryScreen")
                 // Using fully qualified name to avoid any resolution issues
                 @Suppress("ClassName")
                 app.prototype.creator.screens.GalleryScreen(
+                    initialPrototypes = cachedPrototypes,
+                    onPrototypesLoaded = { prototypes ->
+                        cachedPrototypes = prototypes
+                    },
                     onNavigateToChat = { currentScreen = Screen.Chat },
                     onNavigateToPrototype = { prototypeId ->
+                        println("🚀 APP.KT: onNavigateToPrototype called with ID: $prototypeId")
                         selectedPrototypeId = prototypeId
+                        prototypeVersion++ // Increment version to force recreation
+                        println("🚀 APP.KT: prototypeVersion incremented to: $prototypeVersion")
                         currentScreen = Screen.PrototypeDetail
+                        println("🚀 APP.KT: currentScreen set to PrototypeDetail")
                     }
                 )
             }
             is Screen.Chat -> {
+                println("🖥️ APP.KT: Rendering ChatScreen")
                 @Suppress("ClassName")
                 app.prototype.creator.screens.ChatScreen(
-                    onBack = { currentScreen = Screen.Gallery }
+                    onBack = { currentScreen = Screen.Gallery },
+                    onOpenPrototype = { prototypeId ->
+                        println("🚀 APP.KT: onOpenPrototype called from Chat with ID: $prototypeId")
+                        selectedPrototypeId = prototypeId
+                        prototypeVersion++ // Increment version to force recreation
+                        currentScreen = Screen.PrototypeDetail
+                    }
                 )
             }
             is Screen.PrototypeDetail -> {
+                println("🖥️ APP.KT: Rendering PrototypeDetailScreen")
                 selectedPrototypeId?.let { id ->
-                    @Suppress("ClassName")
-                    app.prototype.creator.screens.PrototypeDetailScreen(
-                        prototypeId = id,
-                        onBack = { currentScreen = Screen.Gallery }
-                    )
+                    // Use key with both id and version to force complete recreation
+                    key("$id-$prototypeVersion") {
+                        @Suppress("ClassName")
+                        app.prototype.creator.screens.PrototypeDetailScreen(
+                            prototypeId = id,
+                            version = prototypeVersion,  // Pass version to force recreation
+                            onBack = { 
+                                selectedPrototypeId = null
+                                // Don't increment galleryVersion - let GalleryScreen maintain its state
+                                currentScreen = Screen.Gallery 
+                            }
+                        )
+                    }
                 } ?: run {
                     currentScreen = Screen.Gallery
                 }
