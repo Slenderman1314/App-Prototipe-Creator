@@ -167,20 +167,6 @@ fun PrototypeDetailScreen(
                     ) {
                         // Si hay contenido HTML, mostrarlo renderizado
                         if (!htmlContent.isNullOrEmpty()) {
-                            val viewerKey = "$uniqueKey-${if (isDarkTheme) "dark" else "light"}"
-                            Napier.d("📄 Rendering HTML content for prototype: ${prototype?.name} with key: $viewerKey")
-                            // Use key() with theme to force recreation when theme changes
-                            HtmlViewer(
-                                htmlContent = htmlContent,
-                                modifier = Modifier.fillMaxSize(),
-                                key = uniqueKey  // Use prototypeId as key
-                            )
-                            
-                            // Auto-navigate back after window opens
-                            if (getPlatform() == "Desktop") {
-                                LaunchedEffect(uniqueKey) {
-                                    kotlinx.coroutines.delay(500)
-                                    onBack()
                             Napier.d("📄 Rendering HTML content for prototype: ${prototype?.name} with key: $uniqueKey-v$version")
                             // Use key() with version to force complete recreation
                             key("$uniqueKey-v$version") {
