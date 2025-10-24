@@ -4,15 +4,15 @@ Una aplicación multiplatforma innovadora que genera prototipos detallados de ap
 
 ## 📋 Tabla de Contenidos
 
-- [Características](#características)
-- [Requisitos Previos](#requisitos-previos)
-- [Instalación](#instalación)
-- [Estructura del Proyecto](#estructura-del-proyecto)
-- [Cómo Usar](#cómo-usar)
-- [Desarrollo](#desarrollo)
-- [Construcción](#construcción)
-- [Tecnologías](#tecnologías)
-- [Licencia](#licencia)
+- Características
+- Requisitos Previos
+- Instalación
+- Estructura del Proyecto
+- Cómo Usar
+- Desarrollo
+- Construcción
+- Tecnologías
+- Licencia
 
 ## ✨ Características
 
@@ -130,7 +130,7 @@ App-Prototipe-Creator/
 
 #### Ejecutar en Desktop
 
-**Usando Android Studio:**
+**Usando InteliJ Studio:**
 - Selecciona la configuración "composeApp (Desktop)" en el dropdown de run
 - Presiona el botón "Run"
 
