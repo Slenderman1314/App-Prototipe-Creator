@@ -208,6 +208,72 @@ object Strings {
         Language.SPANISH to "Intentar de nuevo",
         Language.ENGLISH to "Try Again"
     )
+    
+    // Export functionality
+    val export = mapOf(
+        Language.SPANISH to "Exportar",
+        Language.ENGLISH to "Export"
+    )
+    
+    val exportPrototype = mapOf(
+        Language.SPANISH to "Exportar Prototipo",
+        Language.ENGLISH to "Export Prototype"
+    )
+    
+    val selectExportFormat = mapOf(
+        Language.SPANISH to "Seleccionar formato de exportación",
+        Language.ENGLISH to "Select export format"
+    )
+    
+    val exportAsHtml = mapOf(
+        Language.SPANISH to "Exportar como HTML",
+        Language.ENGLISH to "Export as HTML"
+    )
+    
+    val exportAsMhtml = mapOf(
+        Language.SPANISH to "Exportar como MHTML",
+        Language.ENGLISH to "Export as MHTML"
+    )
+    
+    val exportAsPdf = mapOf(
+        Language.SPANISH to "Exportar como PDF",
+        Language.ENGLISH to "Export as PDF"
+    )
+    
+    val exportSuccess = mapOf(
+        Language.SPANISH to "Prototipo exportado exitosamente",
+        Language.ENGLISH to "Prototype exported successfully"
+    )
+    
+    val exportError = mapOf(
+        Language.SPANISH to "Error al exportar el prototipo",
+        Language.ENGLISH to "Error exporting prototype"
+    )
+    
+    val selectLocation = mapOf(
+        Language.SPANISH to "Seleccionar ubicación",
+        Language.ENGLISH to "Select location"
+    )
+    
+    val exportCancelled = mapOf(
+        Language.SPANISH to "Exportación cancelada",
+        Language.ENGLISH to "Export cancelled"
+    )
+    
+    val saveFile = mapOf(
+        Language.SPANISH to "Guardar archivo",
+        Language.ENGLISH to "Save file"
+    )
+    
+    val htmlFiles = mapOf(
+        Language.SPANISH to "Archivos HTML",
+        Language.ENGLISH to "HTML Files"
+    )
+    
+    val pdfFiles = mapOf(
+        Language.SPANISH to "Archivos PDF",
+        Language.ENGLISH to "PDF Files"
+    )
 }
 
 /**
