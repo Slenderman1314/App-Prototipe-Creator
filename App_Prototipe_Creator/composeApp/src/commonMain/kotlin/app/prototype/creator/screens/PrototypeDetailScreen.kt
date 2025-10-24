@@ -14,7 +14,9 @@ import app.prototype.creator.data.i18n.localized
 import app.prototype.creator.data.model.Prototype
 import app.prototype.creator.data.repository.LanguageRepository
 import app.prototype.creator.data.service.SupabaseService
+import app.prototype.creator.data.service.ExportService
 import app.prototype.creator.ui.components.HtmlViewer
+import app.prototype.creator.ui.components.LanguageSelector
 import io.github.aakira.napier.Napier
 import kotlinx.coroutines.launch
 import kotlinx.datetime.Instant
@@ -42,12 +44,30 @@ fun PrototypeDetailScreen(
     onBack: () -> Unit,
     version: Int = 0  // Version to force recreation
 ) {
+    Napier.d("🌐 PrototypeDetailScreen CALLED with prototypeId=$prototypeId")
+    
     // Use only prototypeId as key - version will force component recreation via key() wrapper
     val uniqueKey = prototypeId
-    // Get SupabaseService from Koin
+    // Get services from Koin
     val supabaseService = org.koin.compose.koinInject<SupabaseService>()
+    val exportService = org.koin.compose.koinInject<ExportService>()
     val languageRepository = org.koin.compose.koinInject<LanguageRepository>()
+    
+    // Sync AppSettings language with LanguageRepository
+    val appSettings = LocalAppSettings.current
+    
+    // Get current language for UI rendering
     val currentLanguage by languageRepository.currentLanguage.collectAsState()
+    
+    // Update HtmlViewer and Exporter whenever language changes (runs on every recomposition)
+    SideEffect {
+        Napier.d("🌐 PrototypeDetailScreen: SideEffect - currentLanguage = $currentLanguage")
+        appSettings.language = currentLanguage
+        app.prototype.creator.ui.components.updateWebViewLanguage(currentLanguage)
+        // Update exporter language for file dialogs
+        app.prototype.creator.data.service.updateExporterLanguage(currentLanguage)
+    }
+    
     var prototype by remember(prototypeId) { mutableStateOf<Prototype?>(null) }
     var isLoading by remember(prototypeId) { mutableStateOf(true) }
     var errorMessage by remember(prototypeId) { mutableStateOf<String?>(null) }
@@ -87,6 +107,8 @@ fun PrototypeDetailScreen(
         }
     }
     
+    Napier.d("🌐 PrototypeDetailScreen: Rendering TopAppBar with LanguageSelector")
+    
     Scaffold(
         topBar = {
             TopAppBar(
@@ -95,6 +117,10 @@ fun PrototypeDetailScreen(
                     IconButton(onClick = onBack) {
                         Icon(Icons.Default.ArrowBack, contentDescription = Strings.back.localized(currentLanguage))
                     }
+                },
+                actions = {
+                    Napier.d("🌐 PrototypeDetailScreen: Rendering LanguageSelector in actions")
+                    LanguageSelector()
                 }
             )
         }
@@ -169,10 +195,14 @@ fun PrototypeDetailScreen(
                             Napier.d("📄 Rendering HTML content for prototype: ${prototype?.name} with key: $uniqueKey-v$version")
                             // Use key() with version to force complete recreation
                             key("$uniqueKey-v$version") {
+                                val appSettings = LocalAppSettings.current
                                 HtmlViewer(
                                     htmlContent = htmlContent,
                                     modifier = Modifier.fillMaxSize(),
-                                    key = uniqueKey  // Use prototypeId as key for window management
+                                    key = uniqueKey,  // Use prototypeId as key for window management
+                                    prototypeName = prototype?.name ?: "prototype",
+                                    exportService = exportService,
+                                    language = currentLanguage
                                 )
                             }
                             
@@ -237,3 +267,4 @@ fun PrototypeDetailScreen(
         }
     }
 }
+
