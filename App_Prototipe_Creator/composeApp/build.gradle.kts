@@ -163,6 +163,10 @@ kotlin {
                 
                 // Coroutines
                 implementation(libs.kotlinx.coroutines.android)
+                
+                // PDF generation from HTML - iText 7 with pdfHTML
+                implementation("com.itextpdf:itext7-core:7.2.5")
+                implementation("com.itextpdf:html2pdf:4.0.5")
             }
         }
         
@@ -207,6 +211,9 @@ kotlin {
                 implementation("org.openjfx:javafx-graphics:$javaFxVersion:$javafxPlatform")
                 implementation("org.openjfx:javafx-swing:$javaFxVersion:$javafxPlatform")
                 implementation("org.openjfx:javafx-media:$javaFxVersion:$javafxPlatform")
+                
+                // PDF generation from HTML - iText 7 with pdfHTML (better CSS support)
+                implementation("com.itextpdf:html2pdf:5.0.5")
             }
         }
         
