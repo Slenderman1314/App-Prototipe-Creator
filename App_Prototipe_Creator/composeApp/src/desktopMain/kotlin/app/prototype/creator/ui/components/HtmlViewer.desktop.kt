@@ -19,6 +19,19 @@ import java.awt.event.WindowEvent
 import javax.swing.JFrame
 import javax.swing.JPanel
 import javax.swing.SwingUtilities
+import javax.swing.JButton
+import javax.swing.JPopupMenu
+import javax.swing.JOptionPane
+import java.awt.FlowLayout
+import app.prototype.creator.data.service.ExportService
+import app.prototype.creator.data.service.ExportFormat
+import app.prototype.creator.data.service.ExportResult
+import app.prototype.creator.data.model.Language
+import app.prototype.creator.data.i18n.Strings
+import app.prototype.creator.data.i18n.localized
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
 
 // Public function to initialize the window manager from App.kt
 fun initializeSharedWindowManager() {
@@ -28,6 +41,11 @@ fun initializeSharedWindowManager() {
 // Public function to update theme dynamically
 fun updateWebViewTheme(isDarkTheme: Boolean) {
     SharedWindowManager.updateTheme(isDarkTheme)
+}
+
+// Public function to update language dynamically
+actual fun updateWebViewLanguage(language: app.prototype.creator.data.model.Language) {
+    SharedWindowManager.updateLanguage(language)
 }
 
 // Singleton to manage shared window - JavaFX WebView can't be reliably recreated
@@ -64,6 +82,47 @@ private object SharedWindowManager {
                 frame.setLocationRelativeTo(null)
                 
                 val panel = JPanel(BorderLayout())
+                
+                // Create toolbar with export button
+                toolbarPanel = JPanel(FlowLayout(FlowLayout.RIGHT, 15, 8))
+                applyToolbarTheme(currentTheme)
+                
+                // Create export menu
+                exportMenu = JPopupMenu()
+                
+                // HTML export option
+                htmlMenuItem = javax.swing.JMenuItem("?? HTML (Interactivo)")
+                htmlMenuItem!!.font = java.awt.Font("Segoe UI", java.awt.Font.PLAIN, 13)
+                htmlMenuItem!!.addActionListener {
+                    Napier.d("??? HTML export clicked")
+                    exportCurrentPrototype(ExportFormat.HTML)
+                }
+                exportMenu!!.add(htmlMenuItem)
+                
+                // PDF export option
+                pdfMenuItem = javax.swing.JMenuItem("?? PDF (Documento)")
+                pdfMenuItem!!.font = java.awt.Font("Segoe UI", java.awt.Font.PLAIN, 13)
+                pdfMenuItem!!.addActionListener {
+                    Napier.d("??? PDF export clicked")
+                    exportCurrentPrototype(ExportFormat.PDF)
+                }
+                exportMenu!!.add(pdfMenuItem)
+                
+                // Create export button
+                exportButton = JButton("Exportar ?")
+                exportButton!!.font = java.awt.Font("Segoe UI", java.awt.Font.PLAIN, 14)
+                exportButton!!.cursor = java.awt.Cursor(java.awt.Cursor.HAND_CURSOR)
+                exportButton!!.isFocusPainted = false
+                exportButton!!.preferredSize = java.awt.Dimension(130, 42)
+                applyButtonTheme(currentTheme)
+                
+                val menuRef = exportMenu!!
+                exportButton!!.addActionListener {
+                    menuRef.show(exportButton!!, 0, exportButton!!.height)
+                }
+                
+                toolbarPanel!!.add(exportButton!!)
+                panel.add(toolbarPanel, BorderLayout.NORTH)
                 val jfxPanel = JFXPanel() // Initializes JavaFX toolkit
                 panel.add(jfxPanel, BorderLayout.CENTER)
                 frame.contentPane = panel
@@ -277,6 +336,126 @@ private object SharedWindowManager {
             }
         }
     }
+    
+    private var currentPrototypeName: String = ""
+    private var exportService: ExportService? = null
+    private var currentLanguage: Language = Language.SPANISH
+    private var toolbarPanel: JPanel? = null
+    private var exportButton: JButton? = null
+    private var exportMenu: JPopupMenu? = null
+    private var htmlMenuItem: javax.swing.JMenuItem? = null
+    private var pdfMenuItem: javax.swing.JMenuItem? = null
+    
+    fun setPrototypeInfo(name: String, exportSvc: ExportService?, language: Language) {
+        currentPrototypeName = name
+        exportService = exportSvc
+        currentLanguage = language
+        SwingUtilities.invokeLater {
+            updateMenuTexts()
+        }
+    }
+    
+    private fun updateMenuTexts() {
+        Napier.d("🌐 updateMenuTexts called, currentLanguage: $currentLanguage")
+        if (htmlMenuItem == null || pdfMenuItem == null || exportButton == null) {
+            Napier.w("⚠️ Menu items not initialized: htmlMenuItem=$htmlMenuItem, pdfMenuItem=$pdfMenuItem, exportButton=$exportButton")
+            return
+        }
+        val htmlText = Strings.exportAsHtml.localized(currentLanguage)
+        val pdfText = Strings.exportAsPdf.localized(currentLanguage)
+        val exportText = Strings.export.localized(currentLanguage)
+        Napier.d("🌐 Setting menu texts: htmlText=$htmlText, pdfText=$pdfText, exportText=$exportText")
+        htmlMenuItem?.text = "📄 $htmlText"
+        pdfMenuItem?.text = "📑 $pdfText"
+        exportButton?.text = "$exportText ▼"
+    }
+    
+    fun updateLanguage(language: Language) {
+        Napier.d("🌐 updateLanguage called with: $language")
+        currentLanguage = language
+        SwingUtilities.invokeLater {
+            Napier.d("🌐 Calling updateMenuTexts from updateLanguage")
+            Napier.d("🌐 Menu items state: htmlMenuItem=$htmlMenuItem, pdfMenuItem=$pdfMenuItem, exportButton=$exportButton")
+            updateMenuTexts()
+        }
+    }
+    
+    fun updateToolbarTheme(isDark: Boolean) {
+        Napier.d("🎨 Updating toolbar theme to: ${if (isDark) "DARK" else "LIGHT"}")
+        currentTheme = isDark
+        applyToolbarTheme(isDark)
+        applyButtonTheme(isDark)
+    }
+    
+    private fun exportCurrentPrototype(format: ExportFormat) {
+        if (originalHtml.isEmpty()) {
+            JOptionPane.showMessageDialog(window, "No hay contenido HTML para exportar", "Error", JOptionPane.ERROR_MESSAGE)
+            return
+        }
+        
+        if (exportService == null) {
+            JOptionPane.showMessageDialog(window, "Servicio de exportaci�n no disponible", "Error", JOptionPane.ERROR_MESSAGE)
+            return
+        }
+        
+        CoroutineScope(Dispatchers.IO).launch {
+            try {
+                val result = exportService!!.exportPrototype(
+                    htmlContent = originalHtml,
+                    format = format,
+                    suggestedFileName = currentPrototypeName.ifEmpty { "prototype" }
+                )
+                
+                SwingUtilities.invokeLater {
+                    when (result) {
+                        is ExportResult.Success -> {
+                            JOptionPane.showMessageDialog(window, "Prototipo exportado exitosamente:\n", "�xito", JOptionPane.INFORMATION_MESSAGE)
+                        }
+                        is ExportResult.Error -> {
+                            JOptionPane.showMessageDialog(window, "Error al exportar:\n", "Error", JOptionPane.ERROR_MESSAGE)
+                        }
+                        ExportResult.Cancelled -> {}
+                    }
+                }
+            } catch (e: Exception) {
+                Napier.e("Error during export", e)
+                SwingUtilities.invokeLater {
+                    JOptionPane.showMessageDialog(window, "Error inesperado: ", "Error", JOptionPane.ERROR_MESSAGE)
+                }
+            }
+        }
+    }
+    
+    private fun applyToolbarTheme(isDark: Boolean) {
+        if (toolbarPanel == null) return
+        
+        val bgColor = if (isDark) java.awt.Color(30, 30, 30) else java.awt.Color.WHITE
+        val borderColor = if (isDark) java.awt.Color(50, 50, 50) else java.awt.Color(230, 230, 230)
+        
+        toolbarPanel!!.background = bgColor
+        toolbarPanel!!.border = javax.swing.BorderFactory.createMatteBorder(
+            0, 0, 1, 0, borderColor
+        )
+        toolbarPanel!!.revalidate()
+        toolbarPanel!!.repaint()
+    }
+    
+    private fun applyButtonTheme(isDark: Boolean) {
+        if (exportButton == null) return
+        
+        val bgColor = if (isDark) java.awt.Color(45, 45, 45) else java.awt.Color.WHITE
+        val fgColor = if (isDark) java.awt.Color(187, 134, 252) else java.awt.Color(145, 115, 255)
+        val borderColor = if (isDark) java.awt.Color(187, 134, 252) else java.awt.Color(145, 115, 255)
+        
+        exportButton!!.background = bgColor
+        exportButton!!.foreground = fgColor
+        exportButton!!.border = javax.swing.BorderFactory.createCompoundBorder(
+            javax.swing.BorderFactory.createLineBorder(borderColor, 2, true),
+            javax.swing.BorderFactory.createEmptyBorder(8, 20, 8, 20)
+        )
+        exportButton!!.isOpaque = true
+        exportButton!!.repaint()
+    }
 }
 
 /**
@@ -287,7 +466,10 @@ private object SharedWindowManager {
 actual fun HtmlViewer(
     htmlContent: String,
     modifier: Modifier,
-    key: Any?
+    key: Any?,
+    prototypeName: String,
+    exportService: app.prototype.creator.data.service.ExportService?,
+    language: app.prototype.creator.data.model.Language
 ) {
     val windowKey = key.toString()
     val appSettings = LocalAppSettings.current
@@ -295,9 +477,25 @@ actual fun HtmlViewer(
     
     Napier.d("🌐 HtmlViewer rendering HTML (length: ${htmlContent.length}) for key: $windowKey, darkTheme: $isDarkTheme")
     
-    // Force reload when theme changes
-    LaunchedEffect(key, htmlContent, isDarkTheme) {
-        Napier.d("🪟 LaunchedEffect triggered for key: $windowKey, isDarkTheme: $isDarkTheme")
+    // Update menu texts when language changes
+    LaunchedEffect(language) {
+        Napier.d("🌐 LaunchedEffect(language) fired! New language: $language")
+        SharedWindowManager.updateLanguage(language)
+    }
+    
+    // Update theme dynamically when it changes
+    LaunchedEffect(isDarkTheme) {
+        Napier.d("🎨 Theme changed to: ${if (isDarkTheme) "DARK" else "LIGHT"}")
+        SharedWindowManager.updateTheme(isDarkTheme)
+        // Update toolbar theme
+        SwingUtilities.invokeLater {
+            SharedWindowManager.updateToolbarTheme(isDarkTheme)
+        }
+    }
+    
+    // Force reload when content or key changes
+    LaunchedEffect(key, htmlContent) {
+        Napier.d("🪟 LaunchedEffect triggered for key: $windowKey")
     
         // Ensure window is initialized
         SharedWindowManager.ensureInitialized()
@@ -312,6 +510,7 @@ actual fun HtmlViewer(
         if (SharedWindowManager.webView != null) {
             // Store original HTML for theme switching
             SharedWindowManager.setOriginalHtml(htmlContent)
+            SharedWindowManager.setPrototypeInfo(prototypeName, exportService, language)
             
             // Inject theme-aware CSS
             val themedHtml = injectThemeStyles(htmlContent, isDarkTheme)
@@ -663,3 +862,6 @@ fun injectThemeStyles(htmlContent: String, isDarkTheme: Boolean): String {
     Napier.d("🔧 Theme injection: isDark=$isDarkTheme, originalLength=${htmlContent.length}, newLength=${result.length}")
     return result
 }
+
+
+
