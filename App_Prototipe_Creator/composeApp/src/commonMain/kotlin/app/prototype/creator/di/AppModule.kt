@@ -8,6 +8,9 @@ import app.prototype.creator.data.repository.SupabasePrototypeRepository
 import app.prototype.creator.data.repository.PrototypeRepository
 import app.prototype.creator.data.service.AiService
 import app.prototype.creator.data.service.N8nAIService
+import app.prototype.creator.data.service.ExportService
+import app.prototype.creator.data.service.CommonExportService
+import app.prototype.creator.data.service.PlatformExporter
 import app.prototype.creator.data.local.AppSettings
 import app.prototype.creator.data.local.FavoritesRepository
 import app.prototype.creator.data.service.SupabaseService
@@ -17,7 +20,6 @@ import com.russhwolf.settings.Settings
 import io.github.aakira.napier.DebugAntilog
 import io.github.aakira.napier.Napier
 import io.ktor.client.HttpClient
-import io.ktor.client.plugins.HttpTimeout
 import io.ktor.client.plugins.contentnegotiation.ContentNegotiation
 import io.ktor.client.plugins.defaultRequest
 import io.ktor.client.plugins.logging.LogLevel
@@ -137,6 +139,15 @@ val appModule = module {
     
     single {
         LanguageRepository()
+    }
+    
+    // Export Service
+    single { PlatformExporter() }
+    
+    single<ExportService> {
+        CommonExportService(
+            platformExporter = get()
+        )
     }
 }
 
