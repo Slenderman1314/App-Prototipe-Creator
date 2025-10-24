@@ -4,15 +4,15 @@ Una aplicación multiplatforma innovadora que genera prototipos detallados de ap
 
 ## 📋 Tabla de Contenidos
 
-- [Características]
-- [Requisitos Previos]
-- [Instalación]
-- [Estructura del Proyecto]
-- [Cómo Usar]
-- [Desarrollo]
-- [Construcción]
-- [Tecnologías]
-- [Licencia]
+- Características
+- Requisitos Previos
+- Instalación
+- Estructura del Proyecto
+- Cómo Usar
+- Desarrollo
+- Construcción
+- Tecnologías
+- Licencia
 
 ## ✨ Características
 
