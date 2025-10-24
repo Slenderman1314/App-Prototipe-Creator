@@ -130,7 +130,7 @@ App-Prototipe-Creator/
 
 #### Ejecutar en Desktop
 
-**Usando Android Studio:**
+**Usando InteliJ Studio:**
 - Selecciona la configuración "composeApp (Desktop)" en el dropdown de run
 - Presiona el botón "Run"
 
