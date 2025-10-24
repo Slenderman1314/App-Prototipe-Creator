@@ -1,15 +1,44 @@
-# Registro de Cambios y Correcciones
+# Changelog de Correcciones
 
-## 2025-10-15 - Mejoras en Carga de Variables de Entorno
+Este documento registra las correcciones y mejoras realizadas en el proyecto.
 
-### Problema Reportado
-Los prototipos no se cargaban en la aplicación.
+## 2025-10-21 - Eliminación de Exportación MHTML (Redundante)
 
-### Diagnóstico
-Tras revisar los logs, se identificó que:
-1. La aplicación **SÍ está cargando los prototipos correctamente** desde Supabase
-2. Se encontraron 4 prototipos en la base de datos
-3. La conexión con Supabase funciona correctamente
+### Problema
+Los botones de navegación en archivos exportados con la opción "MHTML" no eran funcionales. Al hacer clic en los botones para navegar entre pantallas, no se mostraban las diferentes vistas del prototipo.
+
+### Causa Raíz Identificada
+**MHTML bloquea JavaScript por seguridad** en navegadores modernos (Chrome, Edge, Firefox). El formato MHTML (MIME HTML) está diseñado para archivar páginas web estáticas, no para contenido interactivo con JavaScript.
+
+### Solución Final
+- **Enfoque**: Eliminar completamente la opción MHTML (redundante con HTML)
+- **Archivos modificados**:
+  - `ExportService.kt` - Eliminado `ExportFormat.MHTML`
+  - `ExportService.desktop.kt` - Eliminada función `exportAsMhtml()`
+  - `HtmlViewer.desktop.kt` - Eliminada opción de menú MHTML
+- **Cambios implementados**:
+  1. **Eliminado formato MHTML** del enum `ExportFormat`
+  2. **Eliminada función `exportAsMhtml()`** - Ya no es necesaria
+  3. **Eliminada opción de menú** "🌐 MHTML (Archivo Web)"
+  4. **Simplificado el código** - Solo HTML y PDF
+
+### Resultado
+✅ **Interfaz más simple** - Solo 2 opciones: HTML y PDF  
+✅ **Sin redundancia** - HTML ya exporta archivos interactivos  
+✅ **Código más limpio** - Menos funciones y opciones  
+✅ **Sin confusión** - No hay opciones duplicadas
+
+### Opciones de Exportación Disponibles
+1. **📄 HTML (Interactivo)** - Archivo HTML con JavaScript funcional
+2. **📑 PDF (Documento)** - Documento PDF estático para documentación
+
+### Documentación Actualizada
+- `EXPORT_FEATURE.md`: Actualizado para reflejar solo HTML y PDF
+- `MHTML_NAVIGATION_FIX.md`: Documentación de por qué se eliminó MHTML
+
+---
+
+## Correcciones Anteriores
 
 ### Mejoras Implementadas
 

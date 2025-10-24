@@ -10,6 +10,7 @@ import app.prototype.creator.di.initKoin
 import app.prototype.creator.utils.loadEnvFromGradleProperties
 import io.github.aakira.napier.Napier
 import io.github.aakira.napier.DebugAntilog
+import app.prototype.creator.initializeAndroid
 
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -20,6 +21,9 @@ class MainActivity : ComponentActivity() {
             // Initialize Napier for logging FIRST
             Napier.base(DebugAntilog())
             Napier.d("🚀 MainActivity onCreate started")
+
+            // Initialize Android components
+            initializeAndroid(applicationContext)
             
             // Load environment variables from env.properties in assets
             loadEnvFromGradleProperties(applicationContext)

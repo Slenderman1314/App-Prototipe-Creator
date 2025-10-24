@@ -183,7 +183,10 @@ private fun injectAndroidThemeCSS(htmlContent: String, isDarkTheme: Boolean): St
 actual fun HtmlViewer(
     htmlContent: String,
     modifier: Modifier,
-    key: Any?
+    key: Any?,
+    prototypeName: String,
+    exportService: app.prototype.creator.data.service.ExportService?,
+    language: app.prototype.creator.data.model.Language
 ) {
     val appSettings = LocalAppSettings.current
     val isDarkTheme = appSettings.isDarkTheme
@@ -223,4 +226,13 @@ actual fun HtmlViewer(
             Napier.d("✅ HTML loaded in WebView")
         }
     )
+}
+
+/**
+ * Update the language of the HtmlViewer dynamically
+ * For Android, this is a no-op as language updates are handled through recomposition
+ */
+actual fun updateWebViewLanguage(language: app.prototype.creator.data.model.Language) {
+    Napier.d("🌐 updateWebViewLanguage called with language: $language (Android)")
+    // Language updates are handled through Compose recomposition
 }

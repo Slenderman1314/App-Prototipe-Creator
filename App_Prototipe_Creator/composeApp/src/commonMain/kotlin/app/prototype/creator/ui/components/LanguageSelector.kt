@@ -10,6 +10,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import app.prototype.creator.data.model.Language
 import app.prototype.creator.data.repository.LanguageRepository
+import io.github.aakira.napier.Napier
 import org.koin.compose.koinInject
 
 /**
@@ -23,6 +24,8 @@ fun LanguageSelector(
 ) {
     val currentLanguage by languageRepository.currentLanguage.collectAsState()
     var expanded by remember { mutableStateOf(false) }
+    
+    Napier.d("🌐 LanguageSelector: Rendering with currentLanguage = $currentLanguage")
     
     Box(modifier = modifier) {
         IconButton(
@@ -59,6 +62,7 @@ fun LanguageSelector(
                         }
                     },
                     onClick = {
+                        Napier.d("🌐 LanguageSelector: User clicked on $language")
                         languageRepository.setLanguage(language)
                         expanded = false
                     }
