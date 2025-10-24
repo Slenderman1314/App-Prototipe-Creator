@@ -29,6 +29,7 @@ Antes de comenzar, asegúrate de tener instalado:
 
 - **Java Development Kit (JDK)**: Versión 11 o superior
 - **Android Studio**: Última versión recomendada
+- **InteliJ Studio**: Última versión recomendada
 - **Gradle**: 7.0 o superior (incluido en el proyecto)
 - **Kotlin**: 1.9.0 o superior
 
