@@ -14,6 +14,7 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import app.prototype.creator.data.i18n.Strings
 import app.prototype.creator.data.i18n.localized
+import app.prototype.creator.data.model.Language
 import app.prototype.creator.data.repository.ChatRepository
 import app.prototype.creator.data.repository.LanguageRepository
 import app.prototype.creator.data.repository.PrototypeRepository
@@ -44,7 +45,8 @@ sealed class Screen(val route: String) {
  */
 class AppSettings {
     var isDarkTheme by mutableStateOf(false)
-    val defaultLanguage: String = "en"
+    var language by mutableStateOf(Language.SPANISH)
+    val defaultLanguage: String = "es"
 }
 
 // CompositionLocal for theme settings
@@ -284,19 +286,19 @@ private fun MainAppContent(
                 )
             }
             is Screen.PrototypeDetail -> {
-                println("🖥️ APP.KT: Rendering PrototypeDetailScreen")
+                println("🖥️ APP.KT: Rendering PrototypeDetailScreen (Android with Export)")
                 selectedPrototypeId?.let { id ->
                     // Use key with both id and version to force complete recreation
                     key("$id-$prototypeVersion") {
                         @Suppress("ClassName")
-                        app.prototype.creator.screens.PrototypeDetailScreen(
+                        app.prototype.creator.ui.navigation.PrototypeDetailRoute(
                             prototypeId = id,
-                            version = prototypeVersion,  // Pass version to force recreation
                             onBack = { 
                                 selectedPrototypeId = null
                                 // Don't increment galleryVersion - let GalleryScreen maintain its state
                                 currentScreen = Screen.Gallery 
-                            }
+                            },
+                            version = prototypeVersion  // Pass version to force recreation
                         )
                     }
                 } ?: run {

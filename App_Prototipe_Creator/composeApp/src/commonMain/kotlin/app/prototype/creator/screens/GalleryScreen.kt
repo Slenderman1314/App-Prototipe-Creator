@@ -134,6 +134,11 @@ fun GalleryScreen(
     val languageRepository = org.koin.compose.koinInject<LanguageRepository>()
     val currentLanguage by languageRepository.currentLanguage.collectAsState()
     
+    // Sync AppSettings language with LanguageRepository
+    LaunchedEffect(currentLanguage) {
+        appSettings.language = currentLanguage
+    }
+    
     // Search state
     var searchQuery by remember { mutableStateOf("") }
     
