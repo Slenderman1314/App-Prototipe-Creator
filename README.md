@@ -9,7 +9,7 @@
 
 ##  Descripción
 
-App Prototype Creator es una herramienta innovadora que utiliza inteligencia artificial para convertir ideas conceptuales en prototipos funcionales y detallados de aplicaciones. Construida con Kotlin Multiplatform y Compose Multiplatform, ofrece una experiencia fluida tanto en Android como en escritorio, permitiendo a desarrolladores y diseñadores visualizar y exportar sus conceptos de manera eficiente.
+App Prototype Creator es una herramienta que utiliza inteligencia artificial para convertir ideas conceptuales en prototipos funcionales y detallados de aplicaciones. Construida con Kotlin Multiplatform y Compose Multiplatform, ofrece una experiencia fluida tanto en Android como en escritorio, permitiendo a desarrolladores y diseñadores visualizar y exportar sus conceptos de manera eficiente.
 
 ##  Características Principales
 
