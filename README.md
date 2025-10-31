@@ -253,7 +253,7 @@ Este proyecto está bajo la Licencia MIT.
 ./gradlew build
 ```
 
-## 🐛 Reportar Problemas
+##  Reportar Problemas
 
 Si encuentras algún bug o tienes sugerencias:
 1. Abre un [issue](https://github.com/Slenderman1314/App-Prototipe-Creator/issues)
