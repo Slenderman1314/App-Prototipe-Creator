@@ -1,112 +1,112 @@
 #  App Prototype Creator
 
-> Una aplicación multiplataforma que transforma ideas en prototipos detallados de aplicaciones mediante IA, con soporte para chat interactivo y visualización de prototipos.
+> A cross-platform application that transforms ideas into detailed application prototypes using AI, with support for interactive chat and prototype visualization.
 
 ![Kotlin](https://img.shields.io/badge/Kotlin-Multiplatform-purple?logo=kotlin)
 ![Compose](https://img.shields.io/badge/Compose-Multiplatform-blue)
 ![Platform](https://img.shields.io/badge/Platform-Android%20%7C%20Desktop-green)
 ![Supabase](https://img.shields.io/badge/Backend-Supabase-3ECF8E?logo=supabase)
 
-##  Descripción
+##  Description
 
-App Prototype Creator es una herramienta que utiliza inteligencia artificial para convertir ideas conceptuales en prototipos funcionales y detallados de aplicaciones. Construida con Kotlin Multiplatform y Compose Multiplatform, ofrece una experiencia fluida tanto en Android como en escritorio, permitiendo a desarrolladores y diseñadores visualizar y exportar sus conceptos de manera eficiente.
+App Prototype Creator is a tool that uses artificial intelligence to convert conceptual ideas into functional and detailed application prototypes. Built with Kotlin Multiplatform and Compose, it provides a seamless experience across Android and Desktop platforms.
 
-##  Características Principales
+##  Main Features
 
--  **Chat con IA**: Interfaz conversacional para describir tu idea de aplicación
--  **Galería de Prototipos**: Visualiza todos tus prototipos creados en una galería organizada
--  **Vista Detallada**: Explora cada prototipo con detalles completos y exportación
--  **Multiplataforma**: Funciona en Android y Desktop (JVM) con código compartido
--  **Tema Personalizable**: Soporte para tema claro y oscuro
--  **Multiidioma**: Sistema de internacionalización integrado (i18n)
--  **Persistencia en la Nube**: Integración con Supabase para almacenamiento
--  **Exportación**: Capacidad de exportar prototipos generados
+-  **Chat with AI**: Conversational interface to describe your application idea
+-  **Prototype Gallery**: View all your created prototypes in an organized gallery
+-  **Detailed View**: Explore each prototype with complete details and export capabilities
+-  **Cross-Platform**: Works on Android and Desktop (JVM) with shared code
+-  **Customizable Theme**: Support for light and dark themes
+-  **Multi-Language**: Integrated internationalization system (i18n)
+-  **Cloud Persistence**: Integration with Supabase for storage
+-  **Export**: Ability to export generated prototypes
 
-##  Arquitectura
+##  Architecture
 
-### Stack Tecnológico
+### Technology Stack
 
-- **Kotlin Multiplatform**: Compartición de código entre plataformas
-- **Compose Multiplatform**: Framework UI declarativo moderno
-- **Supabase**: Backend as a Service para almacenamiento y autenticación
-- **Koin**: Inyección de dependencias
-- **Napier**: Logging multiplataforma
-- **Material Design 3**: Sistema de diseño moderno
+- **Kotlin Multiplatform**: Code sharing between platforms
+- **Compose Multiplatform**: Modern declarative UI framework
+- **Supabase**: Backend as a Service for storage and authentication
+- **Koin**: Dependency injection
+- **Napier**: Cross-platform logging
+- **Material Design 3**: Modern design system
 
-### Estructura de Pantallas
+### Screen Structure
 
 ```
 ┌─────────────────┐
-│  GalleryScreen  │ ◄─── Pantalla inicial
+│  GalleryScreen  │ ◄─── Initial screen
 └────────┬────────┘
          │
          ├──► ChatScreen ────► onOpenPrototype()
-         │                              │
-         └──────────────────────────────┴──► PrototypeDetailScreen
+         │                             │
+         └─────────────────────────────┴──► PrototypeDetailScreen
 ```
 
-##  Requisitos Previos
+##  Prerequisites
 
-- **JDK 17** o superior
-- **Android Studio** Arctic Fox o superior (para desarrollo Android)
-- **IntelliJ IDEA** (recomendado para desarrollo Desktop)
+- **JDK 17** or higher
+- **Android Studio** Arctic Fox or higher (for Android development)
+- **IntelliJ IDEA** (recommended for Desktop development)
 - **Gradle 8.0+**
-- Cuenta de **Supabase** (para funcionalidad completa)
+- **Supabase** account (for full functionality)
 
-##  Instalación y Configuración
+##  Installation and Configuration
 
-### 1. Clonar el Repositorio
+### 1. Clone the Repository
 
 ```bash
 git clone https://github.com/Slenderman1314/App-Prototipe-Creator.git
 cd App-Prototipe-Creator
 ```
 
-### 2. Configurar Variables de Entorno
+### 2. Configure Environment Variables
 
-Crea un archivo `.env` en la raíz del proyecto con las siguientes variables:
+Create a `.env` file in the project root with the following variables:
 
 ```env
-SUPABASE_URL=tu_url_de_supabase
-SUPABASE_KEY=tu_clave_de_supabase
+SUPABASE_URL=your_supabase_url
+SUPABASE_KEY=your_supabase_key
 N8N_WEBHOOK_PATH=n8n_webhook_path
 ...
 ```
 
-> **Nota**: El archivo `.env` debe estar en la raíz del proyecto. La aplicación busca automáticamente en `.env`, `../.env` o `../../.env`
+> **Note**: The `.env` file must be in the project root. The application automatically searches in `.env`, `../.env` or `../../.env`
 
-### 3. Compilar y Ejecutar
+### 3. Build and Run
 
 ####  Android
 
-**En macOS/Linux:**
+**On macOS/Linux:**
 ```bash
 ./gradlew :composeApp:assembleDebug
 ```
 
-**En Windows:**
+**On Windows:**
 ```bash
 .\gradlew.bat :composeApp:assembleDebug
 ```
 
-Para instalar directamente en un dispositivo conectado:
+To install directly on a connected device:
 ```bash
 ./gradlew :composeApp:installDebug
 ```
 
 ####  Desktop (JVM)
 
-**En macOS/Linux:**
+**On macOS/Linux:**
 ```bash
 ./gradlew :composeApp:run
 ```
 
-**En Windows:**
+**On Windows:**
 ```bash
 .\gradlew.bat :composeApp:run
 ```
 
-##  Estructura del Proyecto
+##  Project Structure
 
 ```
 App-Prototipe-Creator/
@@ -114,117 +114,116 @@ App-Prototipe-Creator/
 │   └── src/
 │       ├── commonMain/kotlin/
 │       │   └── app/prototype/creator/
-│       │       ├── App.kt                    # Punto de entrada principal
+│       │       ├── App.kt                    # Main entry point
 │       │       ├── screens/
-│       │       │   ├── GalleryScreen.kt     # Galería de prototipos
-│       │       │   ├── ChatScreen.kt        # Chat con IA
-│       │       │   └── PrototypeDetail.kt   # Detalles del prototipo
+│       │       │   ├── GalleryScreen.kt     # Prototype gallery
+│       │       │   ├── ChatScreen.kt        # AI chat
+│       │       │   └── PrototypeDetail.kt   # Prototype details
 │       │       ├── ui/
-│       │       │   ├── theme/               # Temas y estilos
-│       │       │   └── navigation/          # Navegación
+│       │       │   ├── theme/               # Themes and styles
+│       │       │   └── navigation/          # Navigation
 │       │       ├── data/
-│       │       │   ├── model/               # Modelos de datos
-│       │       │   ├── repository/          # Repositorios
-│       │       │   ├── service/             # Servicios (Supabase)
-│       │       │   └── i18n/                # Internacionalización
-│       │       └── di/                      # Inyección de dependencias
+│       │       │   ├── model/               # Data models
+│       │       │   ├── repository/          # Repositories
+│       │       │   ├── service/             # Services (Supabase)
+│       │       │   └── i18n/                # Internationalization
+│       │       └── di/                      # Dependency injection
 │       ├── androidMain/
 │       │   └── kotlin/
 │       │       └── MainActivity.kt
 │       └── jvmMain/
 │           └── kotlin/
-│               └── Main.kt                   # Punto de entrada Desktop
-├── .env                                      # Variables de entorno (no subir a git)
+│               └── Main.kt                   # Desktop entry point
+├── .env                                      # Environment variables (do not commit to git)
 ├── build.gradle.kts
 └── README.md
 ```
 
-##  Guía de Uso
+##  Usage Guide
 
-### Flujo de Trabajo
+### Workflow
 
-1. **Inicio en Galería**
-   - Al abrir la app, verás la galería con todos tus prototipos guardados
-   - Puedes navegar entre prototipos o crear uno nuevo
+1. **Gallery Start**
+   - When you open the app, you'll see the gallery with all your saved prototypes
+   - You can navigate between prototypes or create a new one
 
-2. **Crear Nuevo Prototipo**
-   - Accede al **ChatScreen** desde la galería
-   - Describe tu idea de aplicación de forma conversacional
-   - La IA procesará tu descripción y generará un prototipo detallado
+2. **Create New Prototype**
+   - Access the **ChatScreen** from the gallery
+   - Describe your application idea conversationally
+   - AI will process your description and generate a detailed prototype
 
-3. **Visualizar y Exportar**
-   - Selecciona cualquier prototipo de la galería
-   - Visualiza todos los detalles en **PrototypeDetailScreen**
-   - Exporta el prototipo en el formato deseado
+3. **View and Export**
+   - Select any prototype from the gallery
+   - View all details in **PrototypeDetailScreen**
+   - Export the prototype in your desired format
 
-### Características del Sistema
+### System Features
 
-- **Gestión de Estado**: Utiliza `remember` y `mutableStateOf` para mantener el estado entre navegaciones
-- **Caché de Prototipos**: La galería mantiene los prototipos en caché para mejor rendimiento
-- **Sistema de Versiones**: Forzar recreación de vistas cuando sea necesario
-- **Navegación Type-Safe**: Sistema de navegación con rutas tipadas
+- **State Management**: Uses `remember` and `mutableStateOf` to maintain state between navigations
+- **Prototype Cache**: The gallery keeps prototypes cached for better performance
+- **Version System**: Force recreation of views when necessary
+- **Type-Safe Navigation**: Navigation system with typed routes
 
-##  Componentes Clave
+##  Key Components
 
 ### AppSettings
-Gestiona configuraciones globales de la aplicación:
-- **Tema**: Modo claro/oscuro
-- **Idioma**: Sistema multiidioma con soporte para español por defecto
-- **Configuración persistente**: Las preferencias se mantienen entre sesiones
+Manages global application settings:
+- **Theme**: Light/dark mode
+- **Language**: Multi-language system with Spanish as default support
+- **Persistent Configuration**: Preferences are maintained between sessions
 
-### Repositorios
-- **PrototypeRepository**: Gestión de prototipos (CRUD)
-- **ChatRepository**: Manejo de conversaciones con IA
-- **LanguageRepository**: Gestión de idiomas y traducciones
+### Repositories
+- **PrototypeRepository**: Prototype management (CRUD)
+- **ChatRepository**: Handling conversations with AI
+- **LanguageRepository**: Language and translation management
 
-### Servicios
-- **SupabaseService**: Conexión con backend de Supabase para persistencia
+### Services
+- **SupabaseService**: Connection to Supabase backend for persistence
 
-##  Internacionalización
+##  Internationalization
 
-El proyecto incluye un sistema completo de i18n con soporte para múltiples idiomas:
+The project includes a complete i18n system with support for multiple languages:
 
 ```kotlin
-// Uso de strings localizados
+// Usage of localized strings
 Text(Strings.initializingApp.localized(currentLanguage))
 ```
 
-Idioma por defecto: **Español (es)**
+Default language: **Spanish (es)**
 
-##  Manejo de Errores
+##  Error Handling
 
-La aplicación incluye un sistema robusto de manejo de errores:
+The application includes a robust error handling system:
 
-- **LoadingScreen**: Pantalla de carga durante inicialización
-- **ErrorScreen**: Pantalla de error con opción de reintentar
-- **Logging**: Sistema de logs con Napier para debugging
-- **Validación de Servicios**: Verificación de que todos los servicios estén inicializados correctamente
+- **LoadingScreen**: Loading screen during initialization
+- **ErrorScreen**: Error screen with retry option
+- **Logging**: Logging system with Napier for debugging
+- **Service Validation**: Verification that all services are initialized correctly
 
-##  Seguridad
+##  Security
 
-- Las claves API se gestionan mediante variables de entorno
-- No se incluyen credenciales en el código fuente
-- El archivo `.env` está en `.gitignore`
+- API keys are managed through environment variables
+- No credentials are included in source code
+- The `.env` file is in `.gitignore`
 
+##  Advanced Technical Features
 
-##  Características Técnicas Avanzadas
+- **Dependency Injection**: Using Koin for clean and testable code
+- **Composition**: Use of `CompositionLocalProvider` for global state
+- **Lazy Initialization**: Components are initialized only when needed
+- **State Management**: Reactive state management with StateFlow and MutableState
+- **Error Boundaries**: Graceful error handling throughout the app
 
-- **Inyección de Dependencias**: Uso de Koin para un código limpio y testeable
-- **Composición**: Uso de `CompositionLocalProvider` para estado global
-- **Lazy Initialization**: Componentes se inicializan solo cuando son necesarios
-- **State Management**: Gestión reactiva del estado con StateFlow y MutableState
-- **Error Boundaries**: Manejo elegante de errores en toda la app
+##  License
 
-##  Licencia
+This project is under the MIT License.
 
-Este proyecto está bajo la Licencia MIT.
+##  Author
 
-##  Autor
-
-**Slenderman1314**
+**Joan Bono**
 - GitHub: [@Slenderman1314](https://github.com/Slenderman1314)
 
-##  Recursos y Documentación
+##  Resources and Documentation
 
 - [Kotlin Multiplatform Docs](https://www.jetbrains.com/help/kotlin-multiplatform-dev/get-started.html)
 - [Compose Multiplatform](https://www.jetbrains.com/lp/compose-multiplatform/)
@@ -234,29 +233,29 @@ Este proyecto está bajo la Licencia MIT.
 
 ##  Troubleshooting
 
-### La app no inicia en Desktop
-- Verifica que el archivo `.env` esté en la ubicación correcta
-- Revisa los logs en consola con `Napier`
-- Asegúrate de tener Java 17 o superior
+### App doesn't start on Desktop
+- Verify that the `.env` file is in the correct location
+- Check the console logs with `Napier`
+- Make sure you have Java 17 or higher
 
-### Errores de inicialización de servicios
-- Confirma que las variables de entorno estén configuradas correctamente
-- Verifica la conectividad con Supabase
-- Revisa los logs para identificar qué servicio falla
+### Service initialization errors
+- Confirm that environment variables are configured correctly
+- Verify connectivity with Supabase
+- Check logs to identify which service fails
 
-### Problemas de compilación
+### Build problems
 ```bash
-# Limpia el proyecto
+# Clean the project
 ./gradlew clean
 
-# Reconstruye
+# Rebuild
 ./gradlew build
 ```
 
-##  Reportar Problemas
+##  Report Issues
 
-Si encuentras algún bug o tienes sugerencias:
-1. Abre un [issue](https://github.com/Slenderman1314/App-Prototipe-Creator/issues)
-2. Describe el problema detalladamente
-3. Incluye logs si es posible
-4. Especifica la plataforma (Android/Desktop)
+If you encounter any bugs or have suggestions:
+1. Open an [issue](https://github.com/Slenderman1314/App-Prototipe-Creator/issues)
+2. Describe the problem in detail
+3. Include logs if possible
+4. Specify the platform (Android/Desktop)
