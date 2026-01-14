@@ -22,32 +22,65 @@ object Config {
     // Database configuration
     val databaseName: String = "prototype_db"
     
-    private fun getRequiredProperty(key: String): String {
-        return getEnvironmentProperty(key)?.takeIf { it.isNotBlank() } ?: run {
-            val error = "$key property is not set or is empty. Please check your .env file or BuildConfig."
+    private fun getRequiredProperty(key: String, defaultValue: String? = null): String {
+        val value = getEnvironmentProperty(key)?.takeIf { it.isNotBlank() }
+        
+        if (value == null) {
+            val error = """
+                ❌ CONFIGURATION ERROR: $key is not set or is empty.
+                
+                Please check your .env file at the project root.
+                The .env file should contain:
+                $key=your_value_here
+                
+                Current working directory: ${System.getProperty("user.dir")}
+                
+                ${if (defaultValue != null) "Using default value: $defaultValue" else "No default value available."}
+            """.trimIndent()
+            
             Napier.e(error)
+            
+            if (defaultValue != null) {
+                Napier.w("⚠️ Using default value for $key: $defaultValue")
+                return defaultValue
+            }
+            
             throw IllegalStateException(error)
         }
+        
+        return value
     }
 
-    // n8n configuration
-    val n8nBaseUrl: String = getRequiredProperty("N8N_BASE_URL").also {
-        Napier.d("ℹ️ n8n Base URL: ${it.substring(0, minOf(10, it.length))}...")
+    // n8n configuration with defaults
+    val n8nBaseUrl: String = getRequiredProperty("N8N_BASE_URL", "https://example.com").also {
+        if (it == "https://example.com") {
+            Napier.w("⚠️ N8N_BASE_URL not configured, using placeholder")
+        } else {
+            Napier.d("ℹ️ n8n Base URL: ${it.substring(0, minOf(10, it.length))}...")
+        }
     }
     
-    val n8nWebhookPath: String = getRequiredProperty("N8N_WEBHOOK_PATH")
+    val n8nWebhookPath: String = getRequiredProperty("N8N_WEBHOOK_PATH", "webhook/placeholder")
     val n8nApiKey: String? = getEnvironmentProperty("N8N_API_KEY")?.takeIf { it.isNotBlank() }
     
-    // Supabase configuration
-    val supabaseUrl: String = getRequiredProperty("SUPABASE_URL").also { url ->
-        require(url.startsWith("https://")) { "Supabase URL must start with https://" }
-        Napier.d("ℹ️ Supabase URL: ${url.substring(0, minOf(10, url.length))}...")
+    // Supabase configuration with defaults
+    val supabaseUrl: String = getRequiredProperty("SUPABASE_URL", "https://placeholder.supabase.co").also { url ->
+        if (url == "https://placeholder.supabase.co") {
+            Napier.w("⚠️ SUPABASE_URL not configured, using placeholder")
+        } else {
+            require(url.startsWith("https://")) { "Supabase URL must start with https://" }
+            Napier.d("ℹ️ Supabase URL: ${url.substring(0, minOf(10, url.length))}...")
+        }
     }
     
-    val supabaseAnonKey: String = getRequiredProperty("SUPABASE_ANON_KEY").also { key ->
-        require(key.startsWith("ey")) { "Invalid Supabase anon key format" }
-        val maskedKey = if (key.length > 10) "${key.substring(0, 5)}...${key.takeLast(5)}" else "***"
-        Napier.d("ℹ️ Supabase key: $maskedKey")
+    val supabaseAnonKey: String = getRequiredProperty("SUPABASE_ANON_KEY", "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.placeholder").also { key ->
+        if (key == "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.placeholder") {
+            Napier.w("⚠️ SUPABASE_ANON_KEY not configured, using placeholder")
+        } else {
+            require(key.startsWith("ey")) { "Invalid Supabase anon key format" }
+            val maskedKey = if (key.length > 10) "${key.substring(0, 5)}...${key.takeLast(5)}" else "***"
+            Napier.d("ℹ️ Supabase key: $maskedKey")
+        }
     }
     
     // Theme and language configuration
