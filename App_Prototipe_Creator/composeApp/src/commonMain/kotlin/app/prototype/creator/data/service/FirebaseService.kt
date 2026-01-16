@@ -3,6 +3,7 @@ package app.prototype.creator.data.service
 import app.prototype.creator.data.model.Prototype
 import app.prototype.creator.data.model.Chat
 import app.prototype.creator.data.model.ChatMessage
+import kotlinx.serialization.InternalSerializationApi
 
 /**
  * Service interface for interacting with Firebase Firestore
@@ -10,6 +11,7 @@ import app.prototype.creator.data.model.ChatMessage
  * This interface defines the contract for cloud storage operations
  * using Firebase as the backend.
  */
+@OptIn(InternalSerializationApi::class)
 interface FirebaseService {
     /**
      * Get a single prototype by ID

@@ -5,6 +5,8 @@ import app.prototype.creator.data.service.FirebaseService
 import io.github.aakira.napier.Napier
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.flow
+import kotlinx.datetime.Clock
+import kotlinx.serialization.InternalSerializationApi
 
 /**
  * Firebase implementation of ChatRepository
@@ -12,6 +14,7 @@ import kotlinx.coroutines.flow.flow
  * This repository uses Firebase Firestore as the backend for cloud storage.
  * Chats and messages are stored in the cloud.
  */
+@OptIn(InternalSerializationApi::class)
 class FirebaseChatRepository(
     private val firebaseService: FirebaseService
 ) : ChatRepository {
@@ -57,12 +60,14 @@ class FirebaseChatRepository(
 
     override suspend fun createChat(title: String): String {
         try {
-            val chatId = "chat_${System.currentTimeMillis()}"
+            val now = Clock.System.now().toEpochMilliseconds()
+            val chatId = "chat_${now}"
             val chat = app.prototype.creator.data.model.Chat(
                 id = chatId,
                 title = title,
-                createdAt = System.currentTimeMillis(),
-                updatedAt = System.currentTimeMillis()
+                createdAt = now,
+                updatedAt = now,
+                userId = null
             )
             
             val result = firebaseService.saveChat(chat)

@@ -10,6 +10,7 @@ import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.catch
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.withContext
+import kotlinx.datetime.Clock
 
 /**
  * SQLDelight implementation of ChatRepository
@@ -78,8 +79,8 @@ class SQLDelightChatRepository(
     override suspend fun createChat(title: String): String {
         return withContext(Dispatchers.IO) {
             try {
-                val chatId = "chat_${System.currentTimeMillis()}"
-                val now = System.currentTimeMillis()
+                val now = Clock.System.now().toEpochMilliseconds()
+                val chatId = "chat_${now}"
                 
                 chatQueries.insert(
                     id = chatId,
