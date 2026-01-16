@@ -18,8 +18,9 @@ import app.prototype.creator.data.model.Language
 import app.prototype.creator.data.repository.ChatRepository
 import app.prototype.creator.data.repository.LanguageRepository
 import app.prototype.creator.data.repository.PrototypeRepository
-import app.prototype.creator.data.service.SupabaseService
+import app.prototype.creator.ui.components.StorageSelectionDialog
 import app.prototype.creator.ui.theme.AppTheme
+import app.prototype.creator.utils.StoragePreferences
 import io.github.aakira.napier.Napier
 import org.koin.compose.KoinContext
 import org.koin.compose.koinInject
@@ -74,8 +75,19 @@ private fun AppContent() {
     var isAppReady by remember { mutableStateOf(false) }
     var initializationError by remember { mutableStateOf<String?>(null) }
     
+    // Storage preferences
+    val storagePreferences = koinInject<StoragePreferences>()
+    
+    // TEMPORAL: Descomentar la siguiente línea para resetear y ver el diálogo nuevamente
+    // storagePreferences.resetStorageConfiguration()
+    
+    val isStorageConfigured = remember { storagePreferences.isStorageConfigured() }
+    var showStorageDialog by remember { mutableStateOf(!isStorageConfigured) }
+    var storageMode by remember { mutableStateOf(storagePreferences.getStorageMode()) }
+    
+    Napier.d("🔍 Storage configured: $isStorageConfigured, Show dialog: $showStorageDialog")
+    
     // Get services from Koin with null safety
-    val supabaseService = koinInject<SupabaseService>()
     val prototypeRepository = koinInject<PrototypeRepository>()
     val chatRepository = koinInject<ChatRepository>()
     
@@ -83,11 +95,31 @@ private fun AppContent() {
     var servicesInitialized by remember { mutableStateOf(false) }
     var servicesError by remember { mutableStateOf<String?>(null) }
 
+    // Show storage selection dialog if not configured
+    if (showStorageDialog) {
+        StorageSelectionDialog(
+            onModeSelected = { mode ->
+                storageMode = mode
+                storagePreferences.setStorageMode(mode)
+                storagePreferences.setStorageConfigured()
+                showStorageDialog = false
+                Napier.d("💾 Storage mode selected: $mode")
+            },
+            onDismiss = {
+                // Use LOCAL as default if dismissed
+                storageMode = "LOCAL"
+                storagePreferences.setStorageMode("LOCAL")
+                storagePreferences.setStorageConfigured()
+                showStorageDialog = false
+                Napier.d("💾 Storage mode defaulted to: LOCAL")
+            }
+        )
+    }
+    
     LaunchedEffect(Unit) {
         runCatching {
             // Verify all required services are initialized
             val services = listOf(
-                "SupabaseService" to supabaseService,
                 "PrototypeRepository" to prototypeRepository,
                 "ChatRepository" to chatRepository
             )
@@ -100,6 +132,7 @@ private fun AppContent() {
                 initializationError = null
                 servicesInitialized = true
                 Napier.d("✅ All services initialized successfully")
+                Napier.d("💾 Current storage mode: $storageMode")
             } else {
                 val error = "❌ Missing services: ${missingServices.joinToString()}"
                 Napier.e(error)
@@ -247,6 +280,25 @@ private fun MainAppContent(
     // Cache gallery state to survive screen changes
     var cachedPrototypes by remember { mutableStateOf<List<app.prototype.creator.data.model.Prototype>>(emptyList()) }
     
+    // Storage settings dialog state
+    val storagePreferences = koinInject<StoragePreferences>()
+    var showStorageSettingsDialog by remember { mutableStateOf(false) }
+    
+    // Show storage settings dialog when requested
+    if (showStorageSettingsDialog) {
+        StorageSelectionDialog(
+            onModeSelected = { mode ->
+                storagePreferences.setStorageMode(mode)
+                showStorageSettingsDialog = false
+                Napier.d("💾 Storage mode changed to: $mode")
+            },
+            onDismiss = {
+                showStorageSettingsDialog = false
+                Napier.d("💾 Storage settings dialog dismissed")
+            }
+        )
+    }
+    
     CompositionLocalProvider(
         LocalAppSettings provides appSettings
     ) {
@@ -269,6 +321,10 @@ private fun MainAppContent(
                         println("🚀 APP.KT: prototypeVersion incremented to: $prototypeVersion")
                         currentScreen = Screen.PrototypeDetail
                         println("🚀 APP.KT: currentScreen set to PrototypeDetail")
+                    },
+                    onStorageSettingsClick = {
+                        showStorageSettingsDialog = true
+                        Napier.d("💾 Storage settings button clicked")
                     }
                 )
             }

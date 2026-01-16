@@ -30,6 +30,9 @@ object Config {
         }
     }
 
+    // Backend Type Selection (N8N or SPRING_BOOT)
+    val aiBackendType: String = getEnvironmentProperty("AI_BACKEND_TYPE")?.uppercase() ?: "N8N"
+    
     // n8n configuration
     val n8nBaseUrl: String = getRequiredProperty("N8N_BASE_URL").also {
         Napier.d("ℹ️ n8n Base URL: ${it.substring(0, minOf(10, it.length))}...")
@@ -38,17 +41,38 @@ object Config {
     val n8nWebhookPath: String = getRequiredProperty("N8N_WEBHOOK_PATH")
     val n8nApiKey: String? = getEnvironmentProperty("N8N_API_KEY")?.takeIf { it.isNotBlank() }
     
-    // Supabase configuration
-    val supabaseUrl: String = getRequiredProperty("SUPABASE_URL").also { url ->
-        require(url.startsWith("https://")) { "Supabase URL must start with https://" }
-        Napier.d("ℹ️ Supabase URL: ${url.substring(0, minOf(10, url.length))}...")
+    // Spring Boot AI configuration
+    val springBootBaseUrl: String = getEnvironmentProperty("SPRING_BOOT_BASE_URL") 
+        ?: "http://localhost:8080"
+    val springBootApiKey: String? = getEnvironmentProperty("SPRING_BOOT_API_KEY")?.takeIf { it.isNotBlank() }
+    
+    // Firebase configuration
+    val firebaseProjectId: String = getEnvironmentProperty("FIREBASE_PROJECT_ID")?.takeIf { it.isNotBlank() } ?: "".also {
+        Napier.w("⚠️ FIREBASE_PROJECT_ID not configured")
     }
     
-    val supabaseAnonKey: String = getRequiredProperty("SUPABASE_ANON_KEY").also { key ->
-        require(key.startsWith("ey")) { "Invalid Supabase anon key format" }
-        val maskedKey = if (key.length > 10) "${key.substring(0, 5)}...${key.takeLast(5)}" else "***"
-        Napier.d("ℹ️ Supabase key: $maskedKey")
+    val firebaseApiKey: String = getEnvironmentProperty("FIREBASE_API_KEY")?.takeIf { it.isNotBlank() } ?: "".also {
+        Napier.w("⚠️ FIREBASE_API_KEY not configured")
     }
+    
+    val firebaseAuthDomain: String = getEnvironmentProperty("FIREBASE_AUTH_DOMAIN")?.takeIf { it.isNotBlank() } ?: ""
+    val firebaseStorageBucket: String = getEnvironmentProperty("FIREBASE_STORAGE_BUCKET")?.takeIf { it.isNotBlank() } ?: ""
+    val firebaseMessagingSenderId: String = getEnvironmentProperty("FIREBASE_MESSAGING_SENDER_ID")?.takeIf { it.isNotBlank() } ?: ""
+    val firebaseAppId: String = getEnvironmentProperty("FIREBASE_APP_ID")?.takeIf { it.isNotBlank() } ?: ""
+    
+    // Database mode: LOCAL, CLOUD, or HYBRID
+    val databaseMode: String = getEnvironmentProperty("DATABASE_MODE")?.uppercase() ?: "LOCAL".also {
+        Napier.d("ℹ️ DATABASE_MODE not configured, using default: LOCAL")
+    }
+    
+    // Check if Firebase is configured
+    val isFirebaseConfigured: Boolean = firebaseProjectId.isNotEmpty() && firebaseApiKey.isNotEmpty()
+    
+    // Check if cloud mode is enabled
+    val isCloudEnabled: Boolean = (databaseMode == "CLOUD" || databaseMode == "HYBRID") && isFirebaseConfigured
+    
+    // Check if local mode is enabled
+    val isLocalEnabled: Boolean = databaseMode == "LOCAL" || databaseMode == "HYBRID" || !isFirebaseConfigured
     
     // Theme and language configuration
     val defaultTheme: String = "system"
@@ -66,9 +90,18 @@ object Config {
                 |DEBUG: $DEBUG
                 |API_URL: $API_URL
                 |API_TIMEOUT: $API_TIMEOUT ms
+                |AI_BACKEND_TYPE: $aiBackendType
                 |N8N_BASE_URL: $n8nBaseUrl
                 |N8N_WEBHOOK_PATH: $n8nWebhookPath
                 |N8N_API_KEY: ${if (n8nApiKey?.isNotBlank() == true) "[SET]" else "[NOT SET]"}
+                |SPRING_BOOT_BASE_URL: $springBootBaseUrl
+                |SPRING_BOOT_API_KEY: ${if (springBootApiKey?.isNotBlank() == true) "[SET]" else "[NOT SET]"}
+                |DATABASE_MODE: $databaseMode
+                |FIREBASE_PROJECT_ID: ${if (firebaseProjectId.isNotEmpty()) "[SET]" else "[NOT SET]"}
+                |FIREBASE_API_KEY: ${if (firebaseApiKey.isNotEmpty()) "[SET]" else "[NOT SET]"}
+                |IS_FIREBASE_CONFIGURED: $isFirebaseConfigured
+                |IS_CLOUD_ENABLED: $isCloudEnabled
+                |IS_LOCAL_ENABLED: $isLocalEnabled
                 |DEFAULT_THEME: $defaultTheme
                 |DEFAULT_LANGUAGE: $defaultLanguage
                 |===========================

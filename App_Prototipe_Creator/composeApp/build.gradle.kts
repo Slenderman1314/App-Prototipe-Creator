@@ -8,6 +8,7 @@ plugins {
     id("org.jetbrains.compose") version "1.6.11"
     id("org.jetbrains.kotlin.plugin.compose") version "2.0.0"
     kotlin("plugin.serialization") version "2.0.0"
+    id("app.cash.sqldelight") version "2.0.1"
 }
 
 // Test task to verify build script is being evaluated
@@ -26,8 +27,19 @@ val napierVersion = "2.6.1"
 val settingsVersion = "1.1.1"
 val coroutinesVersion = "1.7.3"
 val serializationVersion = "1.6.3"
+val sqlDelightVersion = "2.0.1"
 // JavaFX version used for Desktop WebView
 val javaFxVersion = "21.0.3"
+
+// SQLDelight configuration
+sqldelight {
+    databases {
+        create("AppDatabase") {
+            packageName.set("app.prototype.creator.db")
+            schemaOutputDirectory.set(file("src/commonMain/sqldelight/databases"))
+        }
+    }
+}
 
 // Detect platform classifier for OpenJFX artifacts
 val os = org.gradle.internal.os.OperatingSystem.current()
@@ -127,6 +139,11 @@ kotlin {
                 implementation("io.insert-koin:koin-core:$koinVersion")
                 implementation("io.insert-koin:koin-compose:1.1.0")
                 
+                // SQLDelight
+                implementation("app.cash.sqldelight:runtime:$sqlDelightVersion")
+                implementation("app.cash.sqldelight:coroutines-extensions:$sqlDelightVersion")
+                implementation("app.cash.sqldelight:primitive-adapters:$sqlDelightVersion")
+                
                 // Other dependencies
                 implementation("io.github.aakira:napier:$napierVersion")
                 implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:$coroutinesVersion")
@@ -150,6 +167,9 @@ kotlin {
                 // Koin Android
                 implementation(libs.koin.android)
                 implementation(libs.koin.androidx.compose)
+                
+                // SQLDelight Android Driver
+                implementation("app.cash.sqldelight:android-driver:$sqlDelightVersion")
                 
                 // Android settings implementation
                 implementation(libs.multiplatform.settings.no.arg)
@@ -189,6 +209,9 @@ kotlin {
                 
                 // Ktor CIO
                 implementation(libs.ktor.client.cio)
+                
+                // SQLDelight Desktop Driver
+                implementation("app.cash.sqldelight:sqlite-driver:$sqlDelightVersion")
                 
                 // Desktop settings
                 implementation(libs.multiplatform.settings.no.arg)

@@ -1,5 +1,6 @@
 package app.prototype.creator.di
 
+import app.prototype.creator.db.DatabaseDriverFactory
 import io.github.aakira.napier.Napier
 import io.ktor.client.HttpClient
 import io.ktor.client.engine.cio.CIO
@@ -14,9 +15,17 @@ import io.ktor.http.ContentType
 import io.ktor.http.HttpHeaders
 import io.ktor.serialization.kotlinx.json.json
 import kotlinx.serialization.json.Json
+import org.koin.dsl.module
+
+// Desktop-specific module
+val desktopModule = module {
+    single { DatabaseDriverFactory() }
+}
 
 actual fun initPlatformKoin() {
-    // No platform-specific initialization needed for Desktop
+    // Load desktop-specific module
+    org.koin.core.context.GlobalContext.get().loadModules(listOf(desktopModule))
+    Napier.d("✅ Desktop module loaded")
 }
 
 actual fun createConfiguredHttpClient(): HttpClient {

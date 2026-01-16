@@ -13,7 +13,7 @@ data class Prototype(
     val updatedAt: Long = System.currentTimeMillis(),
     val tags: List<String> = emptyList(),
     val isFavorite: Boolean = false,
-    // Campos adicionales de Supabase
+    // Campos adicionales
     val userIdea: String? = null,
     val validationNotes: String? = null
 ) {

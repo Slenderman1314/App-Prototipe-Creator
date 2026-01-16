@@ -274,6 +274,62 @@ object Strings {
         Language.SPANISH to "Archivos PDF",
         Language.ENGLISH to "PDF Files"
     )
+    
+    // Storage Selection Dialog
+    val storageSelection = mapOf(
+        Language.SPANISH to "Seleccionar Almacenamiento",
+        Language.ENGLISH to "Select Storage"
+    )
+    
+    val storageSelectionDescription = mapOf(
+        Language.SPANISH to "Elige dónde quieres guardar tus datos:",
+        Language.ENGLISH to "Choose where to store your data:"
+    )
+    
+    val storageLocal = mapOf(
+        Language.SPANISH to "Local",
+        Language.ENGLISH to "Local"
+    )
+    
+    val storageLocalDescription = mapOf(
+        Language.SPANISH to "Datos guardados solo en este dispositivo. No requiere cuenta de usuario.",
+        Language.ENGLISH to "Data stored only on this device. No user account required."
+    )
+    
+    val storageCloud = mapOf(
+        Language.SPANISH to "Nube",
+        Language.ENGLISH to "Cloud"
+    )
+    
+    val storageCloudDescription = mapOf(
+        Language.SPANISH to "Datos sincronizados en la nube. Requiere cuenta de usuario.",
+        Language.ENGLISH to "Data synced to the cloud. User account required."
+    )
+    
+    val storageHybrid = mapOf(
+        Language.SPANISH to "Híbrido (Próximamente)",
+        Language.ENGLISH to "Hybrid (Coming Soon)"
+    )
+    
+    val storageHybridDescription = mapOf(
+        Language.SPANISH to "Local + Nube con sincronización automática.",
+        Language.ENGLISH to "Local + Cloud with automatic sync."
+    )
+    
+    val firebaseNotConfigured = mapOf(
+        Language.SPANISH to "⚠️ Firebase no configurado",
+        Language.ENGLISH to "⚠️ Firebase not configured"
+    )
+    
+    val comingSoon = mapOf(
+        Language.SPANISH to "🚧 Próximamente",
+        Language.ENGLISH to "🚧 Coming Soon"
+    )
+    
+    val continueButton = mapOf(
+        Language.SPANISH to "Continuar",
+        Language.ENGLISH to "Continue"
+    )
 }
 
 /**

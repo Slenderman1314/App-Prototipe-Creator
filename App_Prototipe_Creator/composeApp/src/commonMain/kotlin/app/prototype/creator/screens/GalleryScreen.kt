@@ -14,6 +14,7 @@ import androidx.compose.material.icons.filled.LightMode
 import androidx.compose.material.icons.filled.MoreVert
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material.icons.filled.Sort
+import androidx.compose.material.icons.filled.Storage
 import androidx.compose.material.icons.outlined.FavoriteBorder
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
@@ -27,7 +28,7 @@ import app.prototype.creator.data.i18n.Strings
 import app.prototype.creator.data.i18n.localized
 import app.prototype.creator.data.model.Prototype
 import app.prototype.creator.data.repository.LanguageRepository
-import app.prototype.creator.data.service.SupabaseService
+import app.prototype.creator.data.repository.PrototypeRepository
 import app.prototype.creator.ui.components.LanguageSelector
 import io.github.aakira.napier.Napier
 import kotlinx.coroutines.launch
@@ -54,12 +55,12 @@ fun GalleryScreen(
     initialPrototypes: List<Prototype> = emptyList(),
     onPrototypesLoaded: (List<Prototype>) -> Unit = {},
     onNavigateToChat: () -> Unit = {},
-    onNavigateToPrototype: (String) -> Unit = {}
+    onNavigateToPrototype: (String) -> Unit = {},
+    onStorageSettingsClick: () -> Unit = {}
 ) {
     println("📱 GalleryScreen COMPOSING")
     Napier.d("📱 GalleryScreen is being composed/recomposed")
-    // Get SupabaseService from Koin
-    val supabaseService = org.koin.compose.koinInject<SupabaseService>()
+    val prototypeRepository = org.koin.compose.koinInject<PrototypeRepository>()
     val scope = rememberCoroutineScope()
 
     // State management - Initialize with cached prototypes if available
@@ -76,40 +77,21 @@ fun GalleryScreen(
 
     LaunchedEffect(loadKey) {
         try {
-            if (supabaseService == null) {
-                state = state.copy(
-                    isLoading = false,
-                    error = "Error: SupabaseService no está disponible"
-                )
-                return@LaunchedEffect
-            }
-            
             // Only show loading if we don't have cached prototypes
             if (initialPrototypes.isEmpty()) {
                 state = state.copy(isLoading = true)
             }
             
             try {
-                val result = supabaseService.listPrototypes()
-                
-                result.fold(
-                    onSuccess = { prototypes ->
-                        state = state.copy(
-                            isLoading = false,
-                            prototypes = prototypes
-                        )
-                        // Notify parent about loaded prototypes
-                        onPrototypesLoaded(prototypes)
-                        Napier.d("✅ Prototypes loaded: ${prototypes.size}")
-                    },
-                    onFailure = { error ->
-                        state = state.copy(
-                            isLoading = false,
-                            error = "Error al cargar los prototipos: ${error.message}"
-                        )
-                        Napier.e("❌ Error loading prototypes: ${error.message}", error)
-                    }
-                )
+                prototypeRepository.getPrototypes().collect { prototypes ->
+                    state = state.copy(
+                        isLoading = false,
+                        prototypes = prototypes
+                    )
+                    // Notify parent about loaded prototypes
+                    onPrototypesLoaded(prototypes)
+                    Napier.d("✅ Prototypes loaded: ${prototypes.size}")
+                }
             } catch (e: Exception) {
                 state = state.copy(
                     isLoading = false,
@@ -182,6 +164,14 @@ fun GalleryScreen(
             TopAppBar(
                 title = { Text(Strings.galleryTitle.localized(currentLanguage)) },
                 actions = {
+                    // Storage settings button
+                    IconButton(onClick = onStorageSettingsClick) {
+                        Icon(
+                            imageVector = Icons.Default.Storage,
+                            contentDescription = "Storage Settings"
+                        )
+                    }
+                    
                     // Language selector
                     LanguageSelector()
                     
@@ -254,41 +244,17 @@ fun GalleryScreen(
                         scope.launch {
                             state = state.copy(isLoading = true, error = null)
                             try {
-                                if (supabaseService == null) {
+                                prototypeRepository.getPrototypes().collect { prototypes ->
                                     state = state.copy(
                                         isLoading = false,
-                                        error = "Error: SupabaseService no está disponible"
+                                        prototypes = prototypes
                                     )
-                                    return@launch
-                                }
-                                
-                                try {
-                                    val result = supabaseService.listPrototypes()
-                                    result.fold(
-                                        onSuccess = { prototypes ->
-                                            state = state.copy(
-                                                isLoading = false,
-                                                prototypes = prototypes,
-                                                error = null
-                                            )
-                                        },
-                                        onFailure = { error ->
-                                            state = state.copy(
-                                                isLoading = false,
-                                                error = "Error al cargar los prototipos: ${error.message}"
-                                            )
-                                        }
-                                    )
-                                } catch (e: Exception) {
-                                    state = state.copy(
-                                        isLoading = false,
-                                        error = "Error: ${e.message ?: "Error desconocido al cargar los prototipos"}"
-                                    )
+                                    onPrototypesLoaded(prototypes)
                                 }
                             } catch (e: Exception) {
                                 state = state.copy(
                                     isLoading = false,
-                                    error = null
+                                    error = "Error: ${e.message ?: "Error desconocido al cargar los prototipos"}"
                                 )
                             }
                         }
@@ -461,17 +427,12 @@ fun GalleryScreen(
                             onFavoriteClick = {
                                 scope.launch {
                                     try {
-                                        supabaseService.toggleFavorite(prototype.id)
+                                        val updatedPrototype = prototype.copy(isFavorite = !prototype.isFavorite)
+                                        prototypeRepository.updatePrototype(updatedPrototype)
                                         // Recargar la lista para actualizar el estado de favoritos
-                                        val result = supabaseService.listPrototypes()
-                                        result.fold(
-                                            onSuccess = { prototypes ->
-                                                state = state.copy(prototypes = prototypes)
-                                            },
-                                            onFailure = { error ->
-                                                Napier.e("Error reloading prototypes: ${error.message}")
-                                            }
-                                        )
+                                        prototypeRepository.getPrototypes().collect { prototypes ->
+                                            state = state.copy(prototypes = prototypes)
+                                        }
                                     } catch (e: Exception) {
                                         Napier.e("Error toggling favorite", e)
                                     }
