@@ -15,6 +15,7 @@ App Prototype Creator es una herramienta que utiliza inteligencia artificial par
 
 -  **Chat con IA**: Interfaz conversacional para describir tu idea de aplicación
 -  **Galería de Prototipos**: Visualiza todos tus prototipos creados en una galería organizada
+- 
 -  **Vista Detallada**: Explora cada prototipo con detalles completos y exportación
 -  **Multiplataforma**: Funciona en Android y Desktop (JVM) con código compartido
 -  **Tema Personalizable**: Soporte para tema claro y oscuro

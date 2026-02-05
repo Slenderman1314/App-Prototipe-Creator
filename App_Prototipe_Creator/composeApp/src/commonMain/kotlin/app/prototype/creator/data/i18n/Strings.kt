@@ -46,6 +46,11 @@ object Strings {
         Language.SPANISH to "Ir al Chat",
         Language.ENGLISH to "Go to Chat"
     )
+
+    val moreOptions = mapOf(
+        Language.SPANISH to "Más opciones",
+        Language.ENGLISH to "More options"
+    )
     
     val searchPrototypes = mapOf(
         Language.SPANISH to "Buscar prototipos...",

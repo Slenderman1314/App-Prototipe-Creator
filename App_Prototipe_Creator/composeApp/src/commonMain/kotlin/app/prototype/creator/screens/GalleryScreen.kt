@@ -9,7 +9,10 @@ import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.DarkMode
+import androidx.compose.material.icons.filled.ExpandLess
+import androidx.compose.material.icons.filled.ExpandMore
 import androidx.compose.material.icons.filled.Favorite
+import androidx.compose.material.icons.filled.Language
 import androidx.compose.material.icons.filled.LightMode
 import androidx.compose.material.icons.filled.MoreVert
 import androidx.compose.material.icons.filled.Search
@@ -23,9 +26,11 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
+import app.prototype.creator.AppSettings
 import app.prototype.creator.LocalAppSettings
 import app.prototype.creator.data.i18n.Strings
 import app.prototype.creator.data.i18n.localized
+import app.prototype.creator.data.model.Language
 import app.prototype.creator.data.model.Prototype
 import app.prototype.creator.data.repository.LanguageRepository
 import app.prototype.creator.data.repository.PrototypeRepository
@@ -35,6 +40,110 @@ import kotlinx.coroutines.launch
 import kotlinx.datetime.Instant
 import kotlinx.datetime.TimeZone
 import kotlinx.datetime.toLocalDateTime
+
+@Composable
+private fun GalleryOverflowMenu(
+    currentLanguage: Language,
+    languageRepository: LanguageRepository,
+    appSettings: AppSettings,
+    onStorageSettingsClick: () -> Unit
+) {
+    var overflowExpanded by remember { mutableStateOf(false) }
+    var languageExpanded by remember { mutableStateOf(false) }
+    
+    IconButton(onClick = { overflowExpanded = true }) {
+        Icon(
+            imageVector = Icons.Default.MoreVert,
+            contentDescription = Strings.moreOptions.localized(currentLanguage)
+        )
+    }
+    
+    DropdownMenu(
+        expanded = overflowExpanded,
+        onDismissRequest = { overflowExpanded = false }
+    ) {
+        DropdownMenuItem(
+            text = { Text(Strings.storageSelection.localized(currentLanguage)) },
+            onClick = {
+                overflowExpanded = false
+                onStorageSettingsClick()
+            },
+            leadingIcon = {
+                Icon(
+                    imageVector = Icons.Default.Storage,
+                    contentDescription = null
+                )
+            }
+        )
+
+        DropdownMenuItem(
+            text = {
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Text(Strings.language.localized(currentLanguage))
+                    Icon(
+                        imageVector = if (languageExpanded) Icons.Default.ExpandLess else Icons.Default.ExpandMore,
+                        contentDescription = null,
+                        modifier = Modifier.size(20.dp)
+                    )
+                }
+            },
+            onClick = { languageExpanded = !languageExpanded },
+            leadingIcon = {
+                Icon(
+                    imageVector = Icons.Default.Language,
+                    contentDescription = null
+                )
+            }
+        )
+        
+        if (languageExpanded) {
+            app.prototype.creator.data.model.Language.entries.forEach { language ->
+                DropdownMenuItem(
+                    text = {
+                        Text(
+                            text = if (language == currentLanguage) {
+                                "  ${language.nativeName} ✓"
+                            } else {
+                                "  ${language.nativeName}"
+                            },
+                            style = MaterialTheme.typography.bodyMedium
+                        )
+                    },
+                    onClick = {
+                        languageRepository.setLanguage(language)
+                        overflowExpanded = false
+                    }
+                )
+            }
+        }
+
+        val isDark = appSettings.isDarkTheme
+        DropdownMenuItem(
+            text = {
+                Text(
+                    text = if (isDark) {
+                        Strings.lightMode.localized(currentLanguage)
+                    } else {
+                        Strings.darkMode.localized(currentLanguage)
+                    }
+                )
+            },
+            onClick = {
+                appSettings.isDarkTheme = !isDark
+            },
+            leadingIcon = {
+                Icon(
+                    imageVector = if (isDark) Icons.Default.LightMode else Icons.Default.DarkMode,
+                    contentDescription = null
+                )
+            }
+        )
+    }
+}
 
 // Enum for sort order
 enum class SortOrder {
@@ -164,42 +273,19 @@ fun GalleryScreen(
             TopAppBar(
                 title = { Text(Strings.galleryTitle.localized(currentLanguage)) },
                 actions = {
-                    // Storage settings button
-                    IconButton(onClick = onStorageSettingsClick) {
+                    IconButton(onClick = onNavigateToChat) {
                         Icon(
-                            imageVector = Icons.Default.Storage,
-                            contentDescription = "Storage Settings"
+                            imageVector = Icons.AutoMirrored.Filled.Chat,
+                            contentDescription = Strings.goToChat.localized(currentLanguage)
                         )
                     }
-                    
-                    // Language selector
-                    LanguageSelector()
-                    
-                    // Theme toggle
-                    IconButton(onClick = {
-                        appSettings.isDarkTheme = !appSettings.isDarkTheme
-                    }) {
-                        Icon(
-                            imageVector = if (appSettings.isDarkTheme) Icons.Default.LightMode else Icons.Default.DarkMode,
-                            contentDescription = if (appSettings.isDarkTheme) Strings.lightMode.localized(currentLanguage) else Strings.darkMode.localized(currentLanguage)
-                        )
-                    }
-                    
-                    // Chat button
-                    TextButton(onClick = onNavigateToChat) {
-                        Column(
-                            horizontalAlignment = Alignment.CenterHorizontally,
-                            modifier = Modifier.padding(horizontal = 8.dp)
-                        ) {
-                            Icon(
-                                imageVector = Icons.AutoMirrored.Filled.Chat,
-                                contentDescription = Strings.chatTitle.localized(currentLanguage),
-                                modifier = Modifier.size(20.dp)
-                            )
-                            Spacer(modifier = Modifier.height(2.dp))
-                            Text(Strings.goToChat.localized(currentLanguage))
-                        }
-                    }
+
+                    GalleryOverflowMenu(
+                        currentLanguage = currentLanguage,
+                        languageRepository = languageRepository,
+                        appSettings = appSettings,
+                        onStorageSettingsClick = onStorageSettingsClick
+                    )
                 }
             )
         }

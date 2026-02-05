@@ -34,11 +34,23 @@ object Config {
     val aiBackendType: String = getEnvironmentProperty("AI_BACKEND_TYPE")?.uppercase() ?: "N8N"
     
     // n8n configuration
-    val n8nBaseUrl: String = getRequiredProperty("N8N_BASE_URL").also {
-        Napier.d("ℹ️ n8n Base URL: ${it.substring(0, minOf(10, it.length))}...")
+    val n8nBaseUrl: String by lazy {
+        if (aiBackendType == "N8N") {
+            getRequiredProperty("N8N_BASE_URL").also {
+                Napier.d("ℹ️ n8n Base URL: ${it.substring(0, minOf(10, it.length))}...")
+            }
+        } else {
+            ""
+        }
     }
     
-    val n8nWebhookPath: String = getRequiredProperty("N8N_WEBHOOK_PATH")
+    val n8nWebhookPath: String by lazy {
+        if (aiBackendType == "N8N") {
+            getRequiredProperty("N8N_WEBHOOK_PATH")
+        } else {
+            ""
+        }
+    }
     val n8nApiKey: String? = getEnvironmentProperty("N8N_API_KEY")?.takeIf { it.isNotBlank() }
     
     // Spring Boot AI configuration
@@ -80,19 +92,24 @@ object Config {
     
     // Complete URLs for n8n endpoints
     val n8nChatEndpoint: String
-        get() = "${n8nBaseUrl.trimEnd('/')}/${n8nWebhookPath.trimStart('/')}"
+        get() {
+            if (aiBackendType != "N8N") return ""
+            return "${n8nBaseUrl.trimEnd('/')}/${n8nWebhookPath.trimStart('/')}"
+        }
     
     init {
         // Log configuration summary in debug mode
         if (DEBUG) {
+            val n8nBaseUrlEnv = getEnvironmentProperty("N8N_BASE_URL")
+            val n8nWebhookPathEnv = getEnvironmentProperty("N8N_WEBHOOK_PATH")
             val configSummary = """
                 |=== Configuration Summary ===
                 |DEBUG: $DEBUG
                 |API_URL: $API_URL
                 |API_TIMEOUT: $API_TIMEOUT ms
                 |AI_BACKEND_TYPE: $aiBackendType
-                |N8N_BASE_URL: $n8nBaseUrl
-                |N8N_WEBHOOK_PATH: $n8nWebhookPath
+                |N8N_BASE_URL: ${if (!n8nBaseUrlEnv.isNullOrBlank()) "[SET]" else "[NOT SET]"}
+                |N8N_WEBHOOK_PATH: ${if (!n8nWebhookPathEnv.isNullOrBlank()) "[SET]" else "[NOT SET]"}
                 |N8N_API_KEY: ${if (n8nApiKey?.isNotBlank() == true) "[SET]" else "[NOT SET]"}
                 |SPRING_BOOT_BASE_URL: $springBootBaseUrl
                 |SPRING_BOOT_API_KEY: ${if (springBootApiKey?.isNotBlank() == true) "[SET]" else "[NOT SET]"}
@@ -110,8 +127,8 @@ object Config {
             Napier.d(configSummary)
             
             // Check for default values that should be overridden
-            if (n8nBaseUrl == "https://api.example.com/n8n") {
-                Napier.w("WARNING: Using default n8n URL. Please configure N8N_BASE_URL in code.")
+            if (aiBackendType == "N8N" && (n8nBaseUrlEnv.isNullOrBlank() || n8nWebhookPathEnv.isNullOrBlank())) {
+                Napier.w("WARNING: Missing N8N configuration (N8N_BASE_URL / N8N_WEBHOOK_PATH). n8n backend will not work.")
             }
         }
     }
