@@ -42,6 +42,138 @@ import kotlinx.datetime.TimeZone
 import kotlinx.datetime.toLocalDateTime
 
 @Composable
+private fun LanguageDropdown(
+    currentLanguage: Language,
+    languageRepository: LanguageRepository
+) {
+    var expanded by remember { mutableStateOf(false) }
+    Box {
+        TextButton(
+            onClick = { expanded = true },
+            colors = ButtonDefaults.textButtonColors(
+                contentColor = MaterialTheme.colorScheme.onSurface
+            ),
+            contentPadding = PaddingValues(horizontal = 8.dp, vertical = 4.dp)
+        ) {
+            Icon(
+                imageVector = Icons.Default.Language,
+                contentDescription = null,
+                modifier = Modifier.size(18.dp),
+                tint = MaterialTheme.colorScheme.onSurfaceVariant
+            )
+            Spacer(modifier = Modifier.width(4.dp))
+            Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Text(
+                        text = currentLanguage.code.uppercase(),
+                        style = MaterialTheme.typography.labelMedium,
+                        fontWeight = androidx.compose.ui.text.font.FontWeight.Bold
+                    )
+                    Icon(
+                        imageVector = Icons.Default.ExpandMore,
+                        contentDescription = null,
+                        modifier = Modifier.size(14.dp)
+                    )
+                }
+                Text(
+                    text = currentLanguage.nativeName,
+                    style = MaterialTheme.typography.labelSmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+            }
+        }
+        DropdownMenu(
+            expanded = expanded,
+            onDismissRequest = { expanded = false }
+        ) {
+            Language.entries.forEach { language ->
+                DropdownMenuItem(
+                    text = {
+                        Text(
+                            text = language.nativeName,
+                            fontWeight = if (language == currentLanguage)
+                                androidx.compose.ui.text.font.FontWeight.Bold
+                            else
+                                androidx.compose.ui.text.font.FontWeight.Normal,
+                            color = if (language == currentLanguage)
+                                MaterialTheme.colorScheme.primary
+                            else
+                                MaterialTheme.colorScheme.onSurface
+                        )
+                    },
+                    onClick = {
+                        languageRepository.setLanguage(language)
+                        expanded = false
+                    },
+                    trailingIcon = {
+                        if (language == currentLanguage) {
+                            Icon(
+                                imageVector = Icons.Default.Check,
+                                contentDescription = null,
+                                tint = MaterialTheme.colorScheme.primary,
+                                modifier = Modifier.size(16.dp)
+                            )
+                        }
+                    }
+                )
+            }
+        }
+    }
+}
+
+@Composable
+private fun GalleryDesktopActions(
+    currentLanguage: Language,
+    languageRepository: LanguageRepository,
+    appSettings: AppSettings,
+    onStorageSettingsClick: () -> Unit,
+    onNavigateToChat: () -> Unit
+) {
+    val isDark = appSettings.isDarkTheme
+
+    Button(
+        onClick = onNavigateToChat,
+        colors = ButtonDefaults.buttonColors(
+            containerColor = MaterialTheme.colorScheme.primary,
+            contentColor = MaterialTheme.colorScheme.onPrimary
+        ),
+        contentPadding = PaddingValues(horizontal = 16.dp, vertical = 8.dp),
+        modifier = Modifier.padding(end = 4.dp)
+    ) {
+        Icon(
+            imageVector = Icons.AutoMirrored.Filled.Chat,
+            contentDescription = null,
+            modifier = Modifier.size(18.dp)
+        )
+        Spacer(modifier = Modifier.width(8.dp))
+        Text(
+            text = Strings.newPrototype.localized(currentLanguage),
+            style = MaterialTheme.typography.labelLarge
+        )
+    }
+
+    IconButton(onClick = onStorageSettingsClick) {
+        Icon(
+            imageVector = Icons.Default.Storage,
+            contentDescription = Strings.storageSelection.localized(currentLanguage)
+        )
+    }
+
+    LanguageDropdown(
+        currentLanguage = currentLanguage,
+        languageRepository = languageRepository
+    )
+
+    IconButton(onClick = { appSettings.isDarkTheme = !isDark }) {
+        Icon(
+            imageVector = if (isDark) Icons.Default.LightMode else Icons.Default.DarkMode,
+            contentDescription = if (isDark) Strings.lightMode.localized(currentLanguage)
+                                 else Strings.darkMode.localized(currentLanguage)
+        )
+    }
+}
+
+@Composable
 private fun GalleryOverflowMenu(
     currentLanguage: Language,
     languageRepository: LanguageRepository,
@@ -267,25 +399,46 @@ fun GalleryScreen(
         }
     }
 
+    val isDesktopPlatform = app.prototype.creator.utils.isDesktop
+
     // Main UI
     Scaffold(
+        floatingActionButton = {
+            if (!isDesktopPlatform) {
+                ExtendedFloatingActionButton(
+                    onClick = onNavigateToChat,
+                    icon = {
+                        Icon(
+                            imageVector = Icons.AutoMirrored.Filled.Chat,
+                            contentDescription = null
+                        )
+                    },
+                    text = { Text(Strings.newPrototype.localized(currentLanguage)) },
+                    containerColor = MaterialTheme.colorScheme.primary,
+                    contentColor = MaterialTheme.colorScheme.onPrimary
+                )
+            }
+        },
         topBar = {
             TopAppBar(
                 title = { Text(Strings.galleryTitle.localized(currentLanguage)) },
                 actions = {
-                    IconButton(onClick = onNavigateToChat) {
-                        Icon(
-                            imageVector = Icons.AutoMirrored.Filled.Chat,
-                            contentDescription = Strings.goToChat.localized(currentLanguage)
+                    if (isDesktopPlatform) {
+                        GalleryDesktopActions(
+                            currentLanguage = currentLanguage,
+                            languageRepository = languageRepository,
+                            appSettings = appSettings,
+                            onStorageSettingsClick = onStorageSettingsClick,
+                            onNavigateToChat = onNavigateToChat
+                        )
+                    } else {
+                        GalleryOverflowMenu(
+                            currentLanguage = currentLanguage,
+                            languageRepository = languageRepository,
+                            appSettings = appSettings,
+                            onStorageSettingsClick = onStorageSettingsClick
                         )
                     }
-
-                    GalleryOverflowMenu(
-                        currentLanguage = currentLanguage,
-                        languageRepository = languageRepository,
-                        appSettings = appSettings,
-                        onStorageSettingsClick = onStorageSettingsClick
-                    )
                 }
             )
         }
@@ -360,6 +513,13 @@ fun GalleryScreen(
                     horizontalAlignment = Alignment.CenterHorizontally,
                     verticalArrangement = Arrangement.Center
                 ) {
+                    Icon(
+                        imageVector = Icons.AutoMirrored.Filled.Chat,
+                        contentDescription = null,
+                        modifier = Modifier.size(72.dp),
+                        tint = MaterialTheme.colorScheme.primary.copy(alpha = 0.4f)
+                    )
+                    Spacer(modifier = Modifier.height(16.dp))
                     Text(
                         text = Strings.noPrototypes.localized(currentLanguage),
                         style = MaterialTheme.typography.titleMedium,
@@ -371,6 +531,22 @@ fun GalleryScreen(
                         textAlign = TextAlign.Center,
                         color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
+                    Spacer(modifier = Modifier.height(24.dp))
+                    Button(
+                        onClick = onNavigateToChat,
+                        contentPadding = PaddingValues(horizontal = 24.dp, vertical = 12.dp)
+                    ) {
+                        Icon(
+                            imageVector = Icons.AutoMirrored.Filled.Chat,
+                            contentDescription = null,
+                            modifier = Modifier.size(18.dp)
+                        )
+                        Spacer(modifier = Modifier.width(8.dp))
+                        Text(
+                            text = Strings.startInChat.localized(currentLanguage),
+                            style = MaterialTheme.typography.labelLarge
+                        )
+                    }
                 }
             }
 

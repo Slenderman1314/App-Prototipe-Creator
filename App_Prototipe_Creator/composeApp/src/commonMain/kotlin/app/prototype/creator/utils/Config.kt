@@ -36,8 +36,10 @@ object Config {
     // n8n configuration
     val n8nBaseUrl: String by lazy {
         if (aiBackendType == "N8N") {
-            getRequiredProperty("N8N_BASE_URL").also {
+            getEnvironmentProperty("N8N_BASE_URL")?.takeIf { it.isNotBlank() }?.also {
                 Napier.d("ℹ️ n8n Base URL: ${it.substring(0, minOf(10, it.length))}...")
+            } ?: "".also {
+                Napier.w("⚠️ N8N_BASE_URL not configured but AI_BACKEND_TYPE is N8N")
             }
         } else {
             ""
@@ -46,7 +48,9 @@ object Config {
     
     val n8nWebhookPath: String by lazy {
         if (aiBackendType == "N8N") {
-            getRequiredProperty("N8N_WEBHOOK_PATH")
+            getEnvironmentProperty("N8N_WEBHOOK_PATH")?.takeIf { it.isNotBlank() } ?: "".also {
+                Napier.w("⚠️ N8N_WEBHOOK_PATH not configured but AI_BACKEND_TYPE is N8N")
+            }
         } else {
             ""
         }

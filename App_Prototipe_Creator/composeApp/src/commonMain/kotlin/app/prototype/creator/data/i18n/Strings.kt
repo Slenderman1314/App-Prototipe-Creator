@@ -47,6 +47,16 @@ object Strings {
         Language.ENGLISH to "Go to Chat"
     )
 
+    val newPrototype = mapOf(
+        Language.SPANISH to "Nuevo prototipo",
+        Language.ENGLISH to "New prototype"
+    )
+
+    val startInChat = mapOf(
+        Language.SPANISH to "Empezar en el chat",
+        Language.ENGLISH to "Start in chat"
+    )
+
     val moreOptions = mapOf(
         Language.SPANISH to "Más opciones",
         Language.ENGLISH to "More options"

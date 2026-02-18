@@ -1,3 +1,4 @@
+@file:OptIn(kotlinx.serialization.InternalSerializationApi::class)
 package app.prototype.creator.data.model
 
 import kotlinx.serialization.Serializable

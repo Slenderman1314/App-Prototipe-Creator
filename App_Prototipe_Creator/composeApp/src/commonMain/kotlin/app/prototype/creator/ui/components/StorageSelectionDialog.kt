@@ -88,20 +88,17 @@ fun StorageSelectionDialog(
                     icon = Icons.Default.Cloud,
                     title = Strings.storageCloud.localized(currentLanguage),
                     description = Strings.storageCloudDescription.localized(currentLanguage),
-                    isSelected = selectedMode == "CLOUD",
-                    isAvailable = Config.isFirebaseConfigured,
-                    onClick = { selectedMode = "CLOUD" },
-                    warningText = if (!Config.isFirebaseConfigured) {
-                        Strings.firebaseNotConfigured.localized(currentLanguage)
-                    } else null
+                    isSelected = false,
+                    isAvailable = false,
+                    onClick = {},
+                    warningText = Strings.comingSoon.localized(currentLanguage)
                 )
             }
         },
         confirmButton = {
             Button(
                 onClick = { onModeSelected(selectedMode) },
-                enabled = (selectedMode == "LOCAL") || 
-                         (selectedMode == "CLOUD" && Config.isFirebaseConfigured)
+                enabled = selectedMode == "LOCAL"
             ) {
                 Text(Strings.continueButton.localized(currentLanguage))
             }

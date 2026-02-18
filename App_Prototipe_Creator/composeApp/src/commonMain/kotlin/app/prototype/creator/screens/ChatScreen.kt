@@ -51,7 +51,7 @@ fun ChatScreen(
         if (messages.isEmpty() || !messages.first().isFromUser) {
             messages.clear()
             messages.add(
-                ChatMessage(
+                ChatMessage.create(
                     content = Strings.chatWelcomeMessage.localized(currentLanguage),
                     isFromUser = false
                 )
@@ -99,7 +99,7 @@ fun ChatScreen(
                                 messageText = ""
                                 
                                 // Add user message
-                                val userChatMessage = ChatMessage(
+                                val userChatMessage = ChatMessage.create(
                                     content = userMessage,
                                     isFromUser = true
                                 )
@@ -127,7 +127,7 @@ fun ChatScreen(
                                                     .replace("\\", "")  // Eliminar barras invertidas sueltas
                                                     .trim()
                                                 
-                                                val aiMessage = ChatMessage(
+                                                val aiMessage = ChatMessage.create(
                                                     content = cleanedResponse,
                                                     isFromUser = false
                                                 )
@@ -139,7 +139,7 @@ fun ChatScreen(
                                             },
                                             onFailure = { error ->
                                                 Napier.e("Error sending message to AI", error)
-                                                val errorMessage = ChatMessage(
+                                                val errorMessage = ChatMessage.create(
                                                     content = "Error: ${error.message ?: "No se pudo conectar con el servicio de IA"}",
                                                     isFromUser = false,
                                                     isError = true
@@ -149,7 +149,7 @@ fun ChatScreen(
                                         )
                                     } catch (e: Exception) {
                                         Napier.e("Exception in chat", e)
-                                        val errorMessage = ChatMessage(
+                                        val errorMessage = ChatMessage.create(
                                             content = "Error: ${e.message ?: "Error desconocido"}",
                                             isFromUser = false,
                                             isError = true
@@ -188,7 +188,7 @@ fun ChatScreen(
                     },
                     onConfirmAction = {
                         // Enviar "Sí" automáticamente
-                        val confirmMessage = ChatMessage(
+                        val confirmMessage = ChatMessage.create(
                             content = "Sí, continúa",
                             isFromUser = true
                         )
@@ -211,7 +211,7 @@ fun ChatScreen(
                                             .replace("\\", "")
                                             .trim()
                                         
-                                        val aiMessage = ChatMessage(
+                                        val aiMessage = ChatMessage.create(
                                             content = cleanedResponse,
                                             isFromUser = false
                                         )
@@ -221,7 +221,7 @@ fun ChatScreen(
                                     },
                                     onFailure = { error ->
                                         Napier.e("Error sending confirmation", error)
-                                        val errorMessage = ChatMessage(
+                                        val errorMessage = ChatMessage.create(
                                             content = "Error: ${error.message ?: "No se pudo conectar"}",
                                             isFromUser = false,
                                             isError = true

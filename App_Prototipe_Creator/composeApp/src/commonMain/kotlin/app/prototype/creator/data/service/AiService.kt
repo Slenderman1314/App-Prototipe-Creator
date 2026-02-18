@@ -1,3 +1,4 @@
+@file:OptIn(kotlinx.serialization.InternalSerializationApi::class)
 package app.prototype.creator.data.service
 
 import app.prototype.creator.data.model.ChatMessage
@@ -16,9 +17,9 @@ class OpenAIService(private val client: HttpClient) : AiService {
     
     @Serializable
     private data class OpenAIRequest(
-        val model: String = "gpt-3.5-turbo",
+        val model: String,
         val messages: List<Message>,
-        val temperature: Double = 0.7
+        val temperature: Double
     )
     
     @Serializable
@@ -49,7 +50,7 @@ class OpenAIService(private val client: HttpClient) : AiService {
             val response: OpenAIResponse = client.post("https://api.openai.com/v1/chat/completions") {
                 header("Authorization", "Bearer $apiKey")
                 header("Content-Type", "application/json")
-                setBody(OpenAIRequest(messages = openAIMessages))
+                setBody(OpenAIRequest(model = "gpt-3.5-turbo", messages = openAIMessages, temperature = 0.7))
             }.body()
             
             Result.success(response.choices.firstOrNull()?.message?.content ?: "No response")

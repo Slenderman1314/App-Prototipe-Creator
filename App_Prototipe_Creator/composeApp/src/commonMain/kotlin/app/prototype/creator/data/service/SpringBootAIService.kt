@@ -1,3 +1,4 @@
+@file:OptIn(kotlinx.serialization.InternalSerializationApi::class)
 package app.prototype.creator.data.service
 
 import app.prototype.creator.data.model.ChatMessage
@@ -12,15 +13,15 @@ import kotlinx.serialization.json.Json
 @Serializable
 data class SpringBootChatRequest(
     val messages: List<ChatMessage>,
-    val sessionId: String? = null
+    val sessionId: String?
 )
 
 @Serializable
 data class SpringBootChatResponse(
-    val message: String = "",
-    val previewDataUrl: String? = null,
-    val needsMoreInfo: Boolean = false,
-    val error: String? = null
+    val message: String,
+    val previewDataUrl: String?,
+    val needsMoreInfo: Boolean,
+    val error: String?
 )
 
 /**
