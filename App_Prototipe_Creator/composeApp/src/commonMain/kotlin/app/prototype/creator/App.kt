@@ -283,6 +283,7 @@ private fun MainAppContent(
     // Storage settings dialog state
     val storagePreferences = koinInject<StoragePreferences>()
     var showStorageSettingsDialog by remember { mutableStateOf(false) }
+
     
     // Show storage settings dialog when requested
     if (showStorageSettingsDialog) {
