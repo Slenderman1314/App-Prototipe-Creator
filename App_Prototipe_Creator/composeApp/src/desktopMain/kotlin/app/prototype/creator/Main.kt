@@ -1,5 +1,6 @@
 package app.prototype.creator
 
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Window
 import androidx.compose.ui.window.application
@@ -28,7 +29,8 @@ fun main() = application {
     Window(
         onCloseRequest = ::exitApplication,
         title = "App Prototype Creator",
-        state = rememberWindowState(width = 1200.dp, height = 800.dp)
+        state = rememberWindowState(width = 1200.dp, height = 800.dp),
+        icon = painterResource("icons/icon.png")
     ) {
         // Usar la aplicación completa
         App()

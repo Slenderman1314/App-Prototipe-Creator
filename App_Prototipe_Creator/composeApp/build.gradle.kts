@@ -274,20 +274,14 @@ compose.desktop {
                 menu = true
                 menuGroup = "App Prototype Creator"
                 upgradeUuid = "5b4e3c2d-1a0b-4c5d-8e9f-1a2b3c4d5e6f"
-                // iconFile.set(project.file("src/desktopMain/resources/icon.ico"))
-            }
-            
-            // macOS settings
-            macOS {
-                bundleID = "com.prototype.creator"
-                // iconFile.set(project.file("src/desktopMain/resources/icon.icns"))
+                iconFile.set(project.file("src/desktopMain/resources/icons/icon.ico"))
             }
             
             // Linux settings
             linux {
                 menuGroup = "Development"
                 packageName = "app-prototype-creator"
-                // iconFile.set(project.file("src/desktopMain/resources/icon.png"))
+                iconFile.set(project.file("src/desktopMain/resources/icons/icon.png"))
             }
         }
     }
