@@ -1,5 +1,9 @@
 package app.prototype.creator
 
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Window
@@ -25,15 +29,20 @@ fun main() = application {
         Napier.e("❌ Error initializing Koin", e)
         e.printStackTrace()
     }
-    
+
     Window(
         onCloseRequest = ::exitApplication,
         title = "App Prototype Creator",
         state = rememberWindowState(width = 1200.dp, height = 800.dp),
         icon = painterResource("icons/icon.png")
     ) {
-        // Usar la aplicación completa
-        App()
+        var showSplash by remember { mutableStateOf(true) }
+
+        if (showSplash) {
+            SplashScreen(onFinished = { showSplash = false })
+        } else {
+            App()
+        }
     }
 }
 
