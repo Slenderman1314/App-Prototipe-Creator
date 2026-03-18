@@ -8,6 +8,7 @@ import androidx.compose.material.icons.automirrored.filled.Chat
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.Close
+import androidx.compose.material.icons.filled.Cloud
 import androidx.compose.material.icons.filled.DarkMode
 import androidx.compose.material.icons.filled.ExpandLess
 import androidx.compose.material.icons.filled.ExpandMore
@@ -127,6 +128,7 @@ private fun GalleryDesktopActions(
     languageRepository: LanguageRepository,
     appSettings: AppSettings,
     onStorageSettingsClick: () -> Unit,
+    onBackendSettingsClick: () -> Unit,
     onNavigateToChat: () -> Unit
 ) {
     val isDark = appSettings.isDarkTheme
@@ -159,6 +161,13 @@ private fun GalleryDesktopActions(
         )
     }
 
+    IconButton(onClick = onBackendSettingsClick) {
+        Icon(
+            imageVector = Icons.Default.Cloud,
+            contentDescription = if (currentLanguage == Language.SPANISH) "Backend IA" else "AI Backend"
+        )
+    }
+
     LanguageDropdown(
         currentLanguage = currentLanguage,
         languageRepository = languageRepository
@@ -178,7 +187,8 @@ private fun GalleryOverflowMenu(
     currentLanguage: Language,
     languageRepository: LanguageRepository,
     appSettings: AppSettings,
-    onStorageSettingsClick: () -> Unit
+    onStorageSettingsClick: () -> Unit,
+    onBackendSettingsClick: () -> Unit
 ) {
     var overflowExpanded by remember { mutableStateOf(false) }
     var languageExpanded by remember { mutableStateOf(false) }
@@ -203,6 +213,20 @@ private fun GalleryOverflowMenu(
             leadingIcon = {
                 Icon(
                     imageVector = Icons.Default.Storage,
+                    contentDescription = null
+                )
+            }
+        )
+
+        DropdownMenuItem(
+            text = { Text(if (currentLanguage == Language.SPANISH) "Backend IA" else "AI Backend") },
+            onClick = {
+                overflowExpanded = false
+                onBackendSettingsClick()
+            },
+            leadingIcon = {
+                Icon(
+                    imageVector = Icons.Default.Cloud,
                     contentDescription = null
                 )
             }
@@ -297,7 +321,8 @@ fun GalleryScreen(
     onPrototypesLoaded: (List<Prototype>) -> Unit = {},
     onNavigateToChat: () -> Unit = {},
     onNavigateToPrototype: (String) -> Unit = {},
-    onStorageSettingsClick: () -> Unit = {}
+    onStorageSettingsClick: () -> Unit = {},
+    onBackendSettingsClick: () -> Unit = {}
 ) {
     println("📱 GalleryScreen COMPOSING")
     Napier.d("📱 GalleryScreen is being composed/recomposed")
@@ -429,6 +454,7 @@ fun GalleryScreen(
                             languageRepository = languageRepository,
                             appSettings = appSettings,
                             onStorageSettingsClick = onStorageSettingsClick,
+                            onBackendSettingsClick = onBackendSettingsClick,
                             onNavigateToChat = onNavigateToChat
                         )
                     } else {
@@ -436,7 +462,8 @@ fun GalleryScreen(
                             currentLanguage = currentLanguage,
                             languageRepository = languageRepository,
                             appSettings = appSettings,
-                            onStorageSettingsClick = onStorageSettingsClick
+                            onStorageSettingsClick = onStorageSettingsClick,
+                            onBackendSettingsClick = onBackendSettingsClick
                         )
                     }
                 }

@@ -6,6 +6,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Warning
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.compositionLocalOf
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.Alignment
@@ -18,6 +19,7 @@ import app.prototype.creator.data.model.Language
 import app.prototype.creator.data.repository.ChatRepository
 import app.prototype.creator.data.repository.LanguageRepository
 import app.prototype.creator.data.repository.PrototypeRepository
+import app.prototype.creator.ui.components.BackendSelectorDialog
 import app.prototype.creator.ui.components.StorageSelectionDialog
 import app.prototype.creator.ui.theme.AppTheme
 import app.prototype.creator.utils.StoragePreferences
@@ -84,6 +86,7 @@ private fun AppContent() {
     val isStorageConfigured = remember { storagePreferences.isStorageConfigured() }
     var showStorageDialog by remember { mutableStateOf(!isStorageConfigured) }
     var storageMode by remember { mutableStateOf(storagePreferences.getStorageMode()) }
+    var showBackendDialog by remember { mutableStateOf(false) }
     
     Napier.d("🔍 Storage configured: $isStorageConfigured, Show dialog: $showStorageDialog")
     
@@ -280,10 +283,14 @@ private fun MainAppContent(
     // Cache gallery state to survive screen changes
     var cachedPrototypes by remember { mutableStateOf<List<app.prototype.creator.data.model.Prototype>>(emptyList()) }
     
-    // Storage settings dialog state
+    // Storage and backend settings dialog state
     val storagePreferences = koinInject<StoragePreferences>()
     var showStorageSettingsDialog by remember { mutableStateOf(false) }
-
+    var showBackendDialog by remember { mutableStateOf(false) }
+    
+    // Get language repository for dialogs
+    val languageRepository = koinInject<LanguageRepository>()
+    val currentLanguage by languageRepository.currentLanguage.collectAsState()
     
     // Show storage settings dialog when requested
     if (showStorageSettingsDialog) {
@@ -296,6 +303,22 @@ private fun MainAppContent(
             onDismiss = {
                 showStorageSettingsDialog = false
                 Napier.d("💾 Storage settings dialog dismissed")
+            }
+        )
+    }
+    
+    // Show backend settings dialog when requested
+    if (showBackendDialog) {
+        BackendSelectorDialog(
+            currentLanguage = currentLanguage,
+            storagePreferences = storagePreferences,
+            onDismiss = {
+                showBackendDialog = false
+                Napier.d("🤖 Backend settings dialog dismissed")
+            },
+            onBackendChanged = { backend ->
+                Napier.d("🤖 Backend changed to: $backend - App will need restart to apply changes")
+                showBackendDialog = false
             }
         )
     }
@@ -326,6 +349,10 @@ private fun MainAppContent(
                     onStorageSettingsClick = {
                         showStorageSettingsDialog = true
                         Napier.d("💾 Storage settings button clicked")
+                    },
+                    onBackendSettingsClick = {
+                        showBackendDialog = true
+                        Napier.d("🤖 Backend settings button clicked")
                     }
                 )
             }

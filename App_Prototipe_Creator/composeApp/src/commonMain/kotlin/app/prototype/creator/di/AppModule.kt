@@ -117,11 +117,12 @@ val appModule = module {
 
     // AI Service - Configurable backend (n8n or Spring Boot)
     single<AiService> {
-        val backendType = Config.aiBackendType
+        val storagePreferences = get<StoragePreferences>()
+        val backendType = storagePreferences.getAiBackend()
         Napier.d("🤖 Initializing AI Service with backend: $backendType")
         
         when (backendType) {
-            "SPRING_BOOT" -> {
+            StoragePreferences.BACKEND_SPRING_BOOT -> {
                 Napier.d("✅ Using Spring Boot AI backend")
                 SpringBootAIService(
                     client = get(),

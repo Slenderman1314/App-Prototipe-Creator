@@ -15,10 +15,14 @@ class StoragePreferences(private val settings: Settings) {
         private const val KEY_STORAGE_CONFIGURED = "storage_configured"
         private const val KEY_CURRENT_USER_ID = "current_user_id"
         private const val KEY_USER_PREFIX = "user_"
+        private const val KEY_AI_BACKEND = "ai_backend"
         
         const val MODE_LOCAL = "LOCAL"
         const val MODE_CLOUD = "CLOUD"
         const val MODE_HYBRID = "HYBRID"
+        
+        const val BACKEND_N8N = "N8N"
+        const val BACKEND_SPRING_BOOT = "SPRING_BOOT"
         
         private const val DEFAULT_USER_ID = "default_user"
     }
@@ -132,5 +136,20 @@ class StoragePreferences(private val settings: Settings) {
     fun clear() {
         settings.clear()
         Napier.d("🗑️ All preferences cleared")
+    }
+    
+    /**
+     * Get the current AI backend type
+     */
+    fun getAiBackend(): String {
+        return settings.getString(KEY_AI_BACKEND, BACKEND_N8N)
+    }
+    
+    /**
+     * Set the AI backend type
+     */
+    fun setAiBackend(backend: String) {
+        settings.putString(KEY_AI_BACKEND, backend)
+        Napier.d("AI Backend set to: $backend")
     }
 }
