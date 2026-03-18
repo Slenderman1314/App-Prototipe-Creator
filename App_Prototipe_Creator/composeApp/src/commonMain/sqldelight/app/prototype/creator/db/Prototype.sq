@@ -1,0 +1,65 @@
+-- Schema para Prototypes
+CREATE TABLE Prototype (
+    id TEXT PRIMARY KEY NOT NULL,
+    name TEXT NOT NULL,
+    description TEXT NOT NULL DEFAULT '',
+    previewUrl TEXT NOT NULL,
+    htmlContent TEXT,
+    createdAt INTEGER NOT NULL,
+    updatedAt INTEGER NOT NULL,
+    tags TEXT NOT NULL DEFAULT '',
+    isFavorite INTEGER NOT NULL DEFAULT 0,
+    userIdea TEXT,
+    validationNotes TEXT
+);
+
+-- Índices para mejorar performance
+CREATE INDEX prototype_updatedAt ON Prototype(updatedAt);
+CREATE INDEX prototype_isFavorite ON Prototype(isFavorite);
+CREATE INDEX prototype_name ON Prototype(name);
+
+-- Queries
+
+selectAll:
+SELECT * FROM Prototype ORDER BY updatedAt DESC;
+
+selectById:
+SELECT * FROM Prototype WHERE id = ?;
+
+selectFavorites:
+SELECT * FROM Prototype WHERE isFavorite = 1 ORDER BY updatedAt DESC;
+
+selectByName:
+SELECT * FROM Prototype WHERE name LIKE '%' || ? || '%' ORDER BY updatedAt DESC;
+
+insert:
+INSERT OR REPLACE INTO Prototype(
+    id, name, description, previewUrl, htmlContent, 
+    createdAt, updatedAt, tags, isFavorite, userIdea, validationNotes
+)
+VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?);
+
+update:
+UPDATE Prototype 
+SET name = ?, 
+    description = ?, 
+    previewUrl = ?, 
+    htmlContent = ?,
+    updatedAt = ?,
+    tags = ?,
+    isFavorite = ?,
+    userIdea = ?,
+    validationNotes = ?
+WHERE id = ?;
+
+updateFavorite:
+UPDATE Prototype SET isFavorite = ?, updatedAt = ? WHERE id = ?;
+
+deleteById:
+DELETE FROM Prototype WHERE id = ?;
+
+deleteAll:
+DELETE FROM Prototype;
+
+count:
+SELECT COUNT(*) FROM Prototype;

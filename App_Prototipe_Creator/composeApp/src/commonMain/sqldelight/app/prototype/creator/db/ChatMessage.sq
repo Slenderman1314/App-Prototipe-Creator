@@ -1,0 +1,47 @@
+-- Schema para ChatMessages
+CREATE TABLE ChatMessage (
+    id TEXT PRIMARY KEY NOT NULL,
+    chatId TEXT NOT NULL,
+    content TEXT NOT NULL,
+    isFromUser INTEGER NOT NULL,
+    timestamp INTEGER NOT NULL,
+    isError INTEGER NOT NULL DEFAULT 0
+);
+
+-- Índices para mejorar performance
+CREATE INDEX chatMessage_chatId ON ChatMessage(chatId);
+CREATE INDEX chatMessage_timestamp ON ChatMessage(timestamp);
+
+-- Queries
+
+selectAll:
+SELECT * FROM ChatMessage ORDER BY timestamp ASC;
+
+selectByChatId:
+SELECT * FROM ChatMessage WHERE chatId = ? ORDER BY timestamp ASC;
+
+selectById:
+SELECT * FROM ChatMessage WHERE id = ?;
+
+insert:
+INSERT OR REPLACE INTO ChatMessage(id, chatId, content, isFromUser, timestamp, isError)
+VALUES (?, ?, ?, ?, ?, ?);
+
+deleteByChatId:
+DELETE FROM ChatMessage WHERE chatId = ?;
+
+deleteById:
+DELETE FROM ChatMessage WHERE id = ?;
+
+deleteAll:
+DELETE FROM ChatMessage;
+
+countByChatId:
+SELECT COUNT(*) FROM ChatMessage WHERE chatId = ?;
+
+-- Query para obtener los últimos mensajes de cada chat
+selectLastMessagePerChat:
+SELECT chatId, MAX(timestamp)
+FROM ChatMessage
+GROUP BY chatId
+ORDER BY MAX(timestamp) DESC;

@@ -31,7 +31,7 @@ class ChatViewModel(
         if (message.isBlank()) return
         
         // Add user message to chat
-        val userMessage = ChatMessage(content = message, isFromUser = true)
+        val userMessage = ChatMessage.create(content = message, isFromUser = true)
         val updatedMessages = uiState.messages + userMessage
         
         uiState = uiState.copy(
@@ -44,7 +44,7 @@ class ChatViewModel(
             val result = aiService.sendMessage(updatedMessages)
             
             uiState = if (result.isSuccess) {
-                val responseMessage = ChatMessage(
+                val responseMessage = ChatMessage.create(
                     content = result.getOrNull() ?: "No response",
                     isFromUser = false
                 )
@@ -55,7 +55,7 @@ class ChatViewModel(
                 )
             } else {
                 val errorMessage = result.exceptionOrNull()?.message ?: "Unknown error"
-                val errorChatMessage = ChatMessage(
+                val errorChatMessage = ChatMessage.create(
                     content = "Error: $errorMessage",
                     isFromUser = false,
                     isError = true

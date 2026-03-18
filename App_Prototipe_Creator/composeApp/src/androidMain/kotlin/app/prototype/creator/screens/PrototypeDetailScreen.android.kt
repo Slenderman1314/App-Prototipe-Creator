@@ -34,8 +34,8 @@ import app.prototype.creator.data.i18n.Strings
 import app.prototype.creator.data.i18n.localized
 import app.prototype.creator.data.model.Language
 import app.prototype.creator.data.repository.LanguageRepository
+import app.prototype.creator.data.repository.PrototypeRepository
 import app.prototype.creator.data.service.ExportService
-import app.prototype.creator.data.service.SupabaseService
 import app.prototype.creator.ui.components.AndroidExportButton
 import app.prototype.creator.ui.components.LanguageSelector
 import io.github.aakira.napier.Napier
@@ -55,7 +55,7 @@ fun PrototypeDetailScreenAndroid(
     Napier.d("🌐 PrototypeDetailScreenAndroid CALLED with prototypeId=$prototypeId")
     
     // Get services from Koin
-    val supabaseService = org.koin.compose.koinInject<SupabaseService>()
+    val prototypeRepository = org.koin.compose.koinInject<PrototypeRepository>()
     val exportService = org.koin.compose.koinInject<ExportService>()
     val languageRepository = org.koin.compose.koinInject<LanguageRepository>()
     
@@ -76,7 +76,7 @@ fun PrototypeDetailScreenAndroid(
     var errorMessage by remember(prototypeId) { mutableStateOf<String?>(null) }
     val scope = rememberCoroutineScope()
     
-    // Load prototype from Supabase
+    // Load prototype from repository
     LaunchedEffect(prototypeId) {
         Napier.d("🔄 LaunchedEffect triggered for prototypeId: $prototypeId")
         prototype = null
@@ -84,17 +84,10 @@ fun PrototypeDetailScreenAndroid(
         errorMessage = null
         
         try {
-            val result = supabaseService.getPrototype(prototypeId)
-            result.fold(
-                onSuccess = { proto ->
-                    prototype = proto
-                    Napier.d("✅ Prototype loaded: ${proto.name}")
-                },
-                onFailure = { error ->
-                    errorMessage = "Error al cargar el prototipo: ${error.message}"
-                    Napier.e("❌ Error loading prototype", error)
-                }
-            )
+            prototypeRepository.getPrototypeById(prototypeId).collect { proto ->
+                prototype = proto
+                Napier.d("✅ Prototype loaded: ${proto.name}")
+            }
         } catch (e: Exception) {
             errorMessage = "Error al cargar el prototipo: ${e.message}"
             Napier.e("❌ Exception in loadPrototype", e)

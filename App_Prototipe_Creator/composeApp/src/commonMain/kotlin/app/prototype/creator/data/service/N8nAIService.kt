@@ -1,3 +1,4 @@
+@file:OptIn(kotlinx.serialization.InternalSerializationApi::class)
 package app.prototype.creator.data.service
 
 import app.prototype.creator.data.model.ChatMessage
@@ -13,14 +14,13 @@ data class N8nRequest(
     val messages: List<ChatMessage>
 )
 
-@Serializable
 data class N8nResponse(
-    val message: String? = null,
-    val response: String? = null,
-    val error: String? = null,
-    val output: String? = null,
-    val result: String? = null,
-    val data: String? = null
+    val message: String?,
+    val response: String?,
+    val error: String?,
+    val output: String?,
+    val result: String?,
+    val data: String?
 )
 
 /**
@@ -36,6 +36,12 @@ class N8nAIService(
     
     override suspend fun sendMessage(messages: List<ChatMessage>): Result<String> {
         return try {
+            if (baseUrl.isBlank() || webhookPath.isBlank()) {
+                val error = "N8N configuration is incomplete. Please configure N8N_BASE_URL and N8N_WEBHOOK_PATH in your environment variables."
+                Napier.e("❌ $error")
+                return Result.failure(IllegalStateException(error))
+            }
+            
             // Construir la URL del webhook de n8n
             val url = if (webhookPath.startsWith("http://") || webhookPath.startsWith("https://")) {
                 webhookPath
