@@ -63,6 +63,18 @@ object Config {
     val n8nWebhookPath: String = getRequiredProperty("N8N_WEBHOOK_PATH", "webhook/placeholder")
     val n8nApiKey: String? = getEnvironmentProperty("N8N_API_KEY")?.takeIf { it.isNotBlank() }
     
+    // Backend Type Selection (N8N or SPRING_BOOT)
+    val aiBackendType: String = getEnvironmentProperty("AI_BACKEND_TYPE")?.uppercase() ?: "N8N"
+    
+    // Spring Boot AI configuration
+    val springBootBaseUrl: String = getEnvironmentProperty("SPRING_BOOT_BASE_URL") 
+        ?: "http://localhost:8080"
+    val springBootApiKey: String? = getEnvironmentProperty("SPRING_BOOT_API_KEY")?.takeIf { it.isNotBlank() }
+    
+    // Firebase configuration
+    val firebaseProjectId: String = getEnvironmentProperty("FIREBASE_PROJECT_ID")?.takeIf { it.isNotBlank() } ?: ""
+    val firebaseApiKey: String = getEnvironmentProperty("FIREBASE_API_KEY")?.takeIf { it.isNotBlank() } ?: ""
+    
     // Supabase configuration with defaults
     val supabaseUrl: String = getRequiredProperty("SUPABASE_URL", "https://placeholder.supabase.co").also { url ->
         if (url == "https://placeholder.supabase.co") {
