@@ -16,9 +16,9 @@ class MainApplication : Application() {
         // Load environment variables from assets
         loadEnvFromGradleProperties(this)
         
-        // Initialize Koin
+        // Initialize Koin with Android context
         try {
-            initKoin()
+            initKoin(this)
             Napier.d("✅ Koin initialized successfully")
         } catch (e: Exception) {
             Napier.e("❌ Error initializing Koin", e)

@@ -10,10 +10,7 @@ import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.tooling.preview.Preview
-import app.prototype.creator.di.initKoin
-import app.prototype.creator.utils.loadEnvFromGradleProperties
 import io.github.aakira.napier.Napier
-import io.github.aakira.napier.DebugAntilog
 import app.prototype.creator.initializeAndroid
 import app.prototype.creator.ActivityProvider
 
@@ -44,23 +41,14 @@ class MainActivity : ComponentActivity() {
         enableEdgeToEdge()
         
         try {
-            // Initialize Napier for logging FIRST
-            Napier.base(DebugAntilog())
             Napier.d("🚀 MainActivity onCreate started")
 
-            // Initialize Android components
+            // Initialize Android components (Koin already initialized in MainApplication)
             initializeAndroid(applicationContext)
             
-            // Load environment variables from env.properties in assets
-            loadEnvFromGradleProperties(applicationContext)
-            Napier.d("✅ Environment variables loaded")
-            
-            // Initialize Koin with Android context
-            initKoin(applicationContext)
-            
-            Napier.d("✅ All initialization complete")
+            Napier.d("✅ MainActivity initialization complete")
         } catch (e: Exception) {
-            Napier.e("❌ Error during initialization", e)
+            Napier.e("❌ Error during MainActivity initialization", e)
             e.printStackTrace()
         }
 
