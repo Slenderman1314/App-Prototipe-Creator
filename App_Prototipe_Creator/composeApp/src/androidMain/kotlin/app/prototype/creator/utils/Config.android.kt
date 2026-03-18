@@ -23,36 +23,46 @@ actual fun getEnvironmentProperty(key: String): String? {
  * These are passed via BuildConfig or can be read from resources
  */
 fun loadEnvFromGradleProperties(context: Context) {
-    try {
-        println("📄 Loading environment variables from gradle.properties")
-        
-        // Try to read from raw resources (if we add gradle.properties there)
-        // For now, we'll read from a properties file in assets
-        val inputStream = context.assets.open("env.properties")
-        val reader = BufferedReader(InputStreamReader(inputStream))
-        
-        var loadedCount = 0
-        reader.useLines { lines ->
-            lines.forEach { line ->
-                val trimmedLine = line.trim()
-                if (trimmedLine.isNotEmpty() && !trimmedLine.startsWith("#")) {
-                    val parts = trimmedLine.split("=", limit = 2)
-                    if (parts.size == 2) {
-                        val key = parts[0].trim()
-                        val value = parts[1].trim()
-                        System.setProperty(key, value)
-                        loadedCount++
-                        println("✓ Loaded: $key")
+    // Try multiple file names
+    val possibleFiles = listOf("env.properties", ".env", "config.properties")
+    var loaded = false
+    
+    for (fileName in possibleFiles) {
+        try {
+            println("📄 Trying to load environment variables from $fileName")
+            
+            val inputStream = context.assets.open(fileName)
+            val reader = BufferedReader(InputStreamReader(inputStream))
+            
+            var loadedCount = 0
+            reader.useLines { lines ->
+                lines.forEach { line ->
+                    val trimmedLine = line.trim()
+                    if (trimmedLine.isNotEmpty() && !trimmedLine.startsWith("#")) {
+                        val parts = trimmedLine.split("=", limit = 2)
+                        if (parts.size == 2) {
+                            val key = parts[0].trim()
+                            val value = parts[1].trim()
+                            System.setProperty(key, value)
+                            loadedCount++
+                            println("✓ Loaded: $key")
+                        }
                     }
                 }
             }
+            
+            println("✅ Environment variables loaded successfully from $fileName ($loadedCount properties)")
+            loaded = true
+            break
+        } catch (e: FileNotFoundException) {
+            println("⚠️ $fileName not found, trying next option...")
+        } catch (e: Exception) {
+            println("❌ Error loading $fileName: ${e.message}")
         }
-        
-        println("✅ Environment variables loaded successfully ($loadedCount properties)")
-    } catch (e: FileNotFoundException) {
-        println("⚠️ env.properties not found, using hardcoded values")
-    } catch (e: Exception) {
-        println("❌ Error loading environment variables: ${e.message}")
-        e.printStackTrace()
+    }
+    
+    if (!loaded) {
+        println("⚠️ No environment properties file found. Please create env.properties in assets/ with your configuration.")
+        println("⚠️ The app will continue but may fail when trying to connect to services.")
     }
 }
