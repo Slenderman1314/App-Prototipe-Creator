@@ -26,6 +26,9 @@ plugins {
     
     // Serialization
     alias(libs.plugins.kotlin.serialization) apply false
+    
+    // SQLDelight
+    id("app.cash.sqldelight") version "2.0.1" apply false
 }
 
 // Common variables

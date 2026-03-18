@@ -1,0 +1,34 @@
+-- Schema para Chats (conversaciones)
+CREATE TABLE Chat (
+    id TEXT PRIMARY KEY NOT NULL,
+    title TEXT NOT NULL,
+    createdAt INTEGER NOT NULL,
+    updatedAt INTEGER NOT NULL
+);
+
+-- Índices
+CREATE INDEX chat_updatedAt ON Chat(updatedAt);
+
+-- Queries
+
+selectAll:
+SELECT * FROM Chat ORDER BY updatedAt DESC;
+
+selectById:
+SELECT * FROM Chat WHERE id = ?;
+
+insert:
+INSERT OR REPLACE INTO Chat(id, title, createdAt, updatedAt)
+VALUES (?, ?, ?, ?);
+
+update:
+UPDATE Chat SET title = ?, updatedAt = ? WHERE id = ?;
+
+deleteById:
+DELETE FROM Chat WHERE id = ?;
+
+deleteAll:
+DELETE FROM Chat;
+
+count:
+SELECT COUNT(*) FROM Chat;

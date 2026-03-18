@@ -1,21 +1,22 @@
 package app.prototype.creator.di
 
 import app.prototype.creator.data.repository.ChatRepository
-import app.prototype.creator.data.repository.InMemoryChatRepository
-import app.prototype.creator.data.repository.InMemoryPrototypeRepository
 import app.prototype.creator.data.repository.LanguageRepository
-import app.prototype.creator.data.repository.SupabasePrototypeRepository
 import app.prototype.creator.data.repository.PrototypeRepository
+import app.prototype.creator.data.repository.SQLDelightPrototypeRepository
+import app.prototype.creator.data.repository.SQLDelightChatRepository
+import app.prototype.creator.db.DatabaseDriverFactory
+import app.prototype.creator.db.AppDatabase
 import app.prototype.creator.data.service.AiService
 import app.prototype.creator.data.service.N8nAIService
+import app.prototype.creator.data.service.SpringBootAIService
 import app.prototype.creator.data.service.ExportService
 import app.prototype.creator.data.service.CommonExportService
 import app.prototype.creator.data.service.PlatformExporter
 import app.prototype.creator.data.local.AppSettings
 import app.prototype.creator.data.local.FavoritesRepository
-import app.prototype.creator.data.service.SupabaseService
-import app.prototype.creator.data.service.SupabaseServiceImpl
 import app.prototype.creator.utils.Config
+import app.prototype.creator.utils.StoragePreferences
 import com.russhwolf.settings.Settings
 import io.github.aakira.napier.DebugAntilog
 import io.github.aakira.napier.Napier
@@ -63,15 +64,15 @@ fun initKoin() {
                 // Additional debug configuration if needed
             }
             
-            // Load all modules
+            // Load all modules (platform module will be loaded via initPlatformKoin)
             modules(
                 appModule,
-                viewModelModule,
-                module {
-                    // Any additional modules can be added here
-                }
+                viewModelModule
             )
         }
+        
+        // Initialize platform-specific modules
+        initPlatformKoin()
         Napier.d(" Koin started successfully")
     } catch (e: Exception) {
         // Log the error and rethrow
@@ -97,7 +98,16 @@ val appModule = module {
 
     // Settings
     single<Settings> { AppSettings.getSettings() }
+    
+    // Storage Preferences
+    single { StoragePreferences(get()) }
 
+    // SQLDelight Database
+    single {
+        val driver = get<DatabaseDriverFactory>().createDriver()
+        AppDatabase(driver)
+    }
+    
     // Favorites Repository
     single {
         FavoritesRepository.create(
@@ -105,35 +115,43 @@ val appModule = module {
         )
     }
 
-    // AI Service
+    // AI Service - Configurable backend (n8n or Spring Boot)
     single<AiService> {
-        N8nAIService(
-            client = get(),
-            baseUrl = Config.n8nBaseUrl,
-            webhookPath = Config.n8nWebhookPath,
-            apiKey = Config.n8nApiKey
-        )
-    }
-
-    // Supabase Service (debe ir antes de los repositorios que lo usan)
-    single<SupabaseService> {
-        SupabaseServiceImpl(
-            client = get(),
-            favoritesRepository = get(),
-            supabaseUrl = Config.supabaseUrl,
-            supabaseKey = Config.supabaseAnonKey
-        )
+        val backendType = Config.aiBackendType
+        Napier.d("🤖 Initializing AI Service with backend: $backendType")
+        
+        when (backendType) {
+            "SPRING_BOOT" -> {
+                Napier.d("✅ Using Spring Boot AI backend")
+                SpringBootAIService(
+                    client = get(),
+                    baseUrl = Config.springBootBaseUrl,
+                    apiKey = Config.springBootApiKey
+                )
+            }
+            else -> {
+                Napier.d("✅ Using n8n AI backend (default)")
+                N8nAIService(
+                    client = get(),
+                    baseUrl = Config.n8nBaseUrl,
+                    webhookPath = Config.n8nWebhookPath,
+                    apiKey = Config.n8nApiKey
+                )
+            }
+        }
     }
     
-    // Repositories
+    // Repositories - Using SQLDelight for local storage
     single<ChatRepository> {
-        InMemoryChatRepository()
+        SQLDelightChatRepository(
+            database = get()
+        )
     }
     
     single<PrototypeRepository> {
-        // Usar el repositorio de Supabase en lugar del in-memory
-        SupabasePrototypeRepository(
-            supabaseService = get()
+        // Usar SQLDelight para almacenamiento local
+        SQLDelightPrototypeRepository(
+            database = get()
         )
     }
     

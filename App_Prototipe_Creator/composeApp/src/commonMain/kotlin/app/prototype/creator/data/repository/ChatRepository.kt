@@ -4,6 +4,7 @@ import app.prototype.creator.data.model.ChatMessage
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.map
+import kotlinx.datetime.Clock
 
 interface ChatRepository {
     /**
@@ -45,7 +46,7 @@ class InMemoryChatRepository : ChatRepository {
     }
 
     override suspend fun createChat(title: String): String {
-        val chatId = "chat_${System.currentTimeMillis()}"
+        val chatId = "chat_${Clock.System.now().toEpochMilliseconds()}"
         conversations[chatId] = mutableListOf()
         recentConversations.value = recentConversations.value + chatId
         return chatId

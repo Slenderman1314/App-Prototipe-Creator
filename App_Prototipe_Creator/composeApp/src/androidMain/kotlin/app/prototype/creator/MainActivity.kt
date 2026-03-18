@@ -1,6 +1,10 @@
 package app.prototype.creator
 
+import android.app.ActivityManager
+import android.graphics.Color
+import android.os.Build
 import android.os.Bundle
+import android.view.WindowManager
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
@@ -11,10 +15,32 @@ import app.prototype.creator.utils.loadEnvFromGradleProperties
 import io.github.aakira.napier.Napier
 import io.github.aakira.napier.DebugAntilog
 import app.prototype.creator.initializeAndroid
+import app.prototype.creator.ActivityProvider
 
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        ActivityProvider.current = this
+        window.addFlags(WindowManager.LayoutParams.FLAG_SECURE)
+        android.util.Log.d("SECURE_FLAG", "🔒 BUILD v4: FLAG_SECURE + recents protection applied")
+
+        @Suppress("DEPRECATION")
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
+            val taskDesc = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+                ActivityManager.TaskDescription.Builder()
+                    .setBackgroundColor(Color.BLACK)
+                    .build()
+            } else {
+                ActivityManager.TaskDescription(null, null, Color.BLACK)
+            }
+            setTaskDescription(taskDesc)
+        }
+
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+            setRecentsScreenshotEnabled(false)
+            android.util.Log.d("SECURE_FLAG", "🔒 setRecentsScreenshotEnabled(false) applied (API 33+)")
+        }
+
         enableEdgeToEdge()
         
         try {
@@ -41,6 +67,11 @@ class MainActivity : ComponentActivity() {
         setContent {
             App()
         }
+    }
+
+    override fun onDestroy() {
+        super.onDestroy()
+        ActivityProvider.current = null
     }
 }
 

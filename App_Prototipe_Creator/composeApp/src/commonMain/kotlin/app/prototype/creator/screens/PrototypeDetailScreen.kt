@@ -13,7 +13,7 @@ import app.prototype.creator.data.i18n.Strings
 import app.prototype.creator.data.i18n.localized
 import app.prototype.creator.data.model.Prototype
 import app.prototype.creator.data.repository.LanguageRepository
-import app.prototype.creator.data.service.SupabaseService
+import app.prototype.creator.data.repository.PrototypeRepository
 import app.prototype.creator.data.service.ExportService
 import app.prototype.creator.ui.components.HtmlViewer
 import app.prototype.creator.ui.components.LanguageSelector
@@ -49,7 +49,7 @@ fun PrototypeDetailScreen(
     // Use only prototypeId as key - version will force component recreation via key() wrapper
     val uniqueKey = prototypeId
     // Get services from Koin
-    val supabaseService = org.koin.compose.koinInject<SupabaseService>()
+    val prototypeRepository = org.koin.compose.koinInject<PrototypeRepository>()
     val exportService = org.koin.compose.koinInject<ExportService>()
     val languageRepository = org.koin.compose.koinInject<LanguageRepository>()
     
@@ -73,7 +73,7 @@ fun PrototypeDetailScreen(
     var errorMessage by remember(prototypeId) { mutableStateOf<String?>(null) }
     val scope = rememberCoroutineScope()
     
-    // Load prototype from Supabase - reset state when prototypeId changes
+    // Load prototype from repository - reset state when prototypeId changes
     LaunchedEffect(prototypeId) {
         Napier.d("🔄 LaunchedEffect triggered for prototypeId: $prototypeId")
         // Reset state
@@ -84,20 +84,13 @@ fun PrototypeDetailScreen(
         scope.launch {
             try {
                 // Fetch prototype details
-                val result = supabaseService.getPrototype(prototypeId)
-                result.fold(
-                    onSuccess = { proto ->
-                        prototype = proto
-                        Napier.d("✅ Prototype loaded: ${proto.name}")
-                        Napier.d("   - ID: ${proto.id}")
-                        Napier.d("   - HTML content length: ${proto.htmlContent?.length ?: 0}")
-                        Napier.d("   - HTML preview: ${proto.htmlContent?.take(100)}")
-                    },
-                    onFailure = { error ->
-                        errorMessage = error.message ?: "Error desconocido"
-                        Napier.e("❌ Error loading prototype: ${error.message}")
-                    }
-                )
+                prototypeRepository.getPrototypeById(prototypeId).collect { proto ->
+                    prototype = proto
+                    Napier.d("✅ Prototype loaded: ${proto.name}")
+                    Napier.d("   - ID: ${proto.id}")
+                    Napier.d("   - HTML content length: ${proto.htmlContent?.length ?: 0}")
+                    Napier.d("   - HTML preview: ${proto.htmlContent?.take(100)}")
+                }
             } catch (e: Exception) {
                 errorMessage = "Error al cargar el prototipo: ${e.message}"
                 Napier.e("❌ Exception in loadPrototype", e)
@@ -158,17 +151,15 @@ fun PrototypeDetailScreen(
                             scope.launch {
                                 isLoading = true
                                 errorMessage = null
-                                val result = supabaseService.getPrototype(prototypeId)
-                                result.fold(
-                                    onSuccess = { proto ->
+                                try {
+                                    prototypeRepository.getPrototypeById(prototypeId).collect { proto ->
                                         prototype = proto
                                         isLoading = false
-                                    },
-                                    onFailure = { error ->
-                                        errorMessage = error.message
-                                        isLoading = false
                                     }
-                                )
+                                } catch (e: Exception) {
+                                    errorMessage = e.message
+                                    isLoading = false
+                                }
                             }
                         }) {
                             Text(Strings.retry.localized(currentLanguage))

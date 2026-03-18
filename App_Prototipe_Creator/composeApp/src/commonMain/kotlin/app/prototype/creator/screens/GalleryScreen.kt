@@ -9,11 +9,15 @@ import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.DarkMode
+import androidx.compose.material.icons.filled.ExpandLess
+import androidx.compose.material.icons.filled.ExpandMore
 import androidx.compose.material.icons.filled.Favorite
+import androidx.compose.material.icons.filled.Language
 import androidx.compose.material.icons.filled.LightMode
 import androidx.compose.material.icons.filled.MoreVert
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material.icons.filled.Sort
+import androidx.compose.material.icons.filled.Storage
 import androidx.compose.material.icons.outlined.FavoriteBorder
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
@@ -22,18 +26,256 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
+import app.prototype.creator.AppSettings
 import app.prototype.creator.LocalAppSettings
 import app.prototype.creator.data.i18n.Strings
 import app.prototype.creator.data.i18n.localized
+import app.prototype.creator.data.model.Language
 import app.prototype.creator.data.model.Prototype
 import app.prototype.creator.data.repository.LanguageRepository
-import app.prototype.creator.data.service.SupabaseService
+import app.prototype.creator.data.repository.PrototypeRepository
 import app.prototype.creator.ui.components.LanguageSelector
 import io.github.aakira.napier.Napier
 import kotlinx.coroutines.launch
 import kotlinx.datetime.Instant
 import kotlinx.datetime.TimeZone
 import kotlinx.datetime.toLocalDateTime
+
+@Composable
+private fun LanguageDropdown(
+    currentLanguage: Language,
+    languageRepository: LanguageRepository
+) {
+    var expanded by remember { mutableStateOf(false) }
+    Box {
+        TextButton(
+            onClick = { expanded = true },
+            colors = ButtonDefaults.textButtonColors(
+                contentColor = MaterialTheme.colorScheme.onSurface
+            ),
+            contentPadding = PaddingValues(horizontal = 8.dp, vertical = 4.dp)
+        ) {
+            Icon(
+                imageVector = Icons.Default.Language,
+                contentDescription = null,
+                modifier = Modifier.size(18.dp),
+                tint = MaterialTheme.colorScheme.onSurfaceVariant
+            )
+            Spacer(modifier = Modifier.width(4.dp))
+            Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Text(
+                        text = currentLanguage.code.uppercase(),
+                        style = MaterialTheme.typography.labelMedium,
+                        fontWeight = androidx.compose.ui.text.font.FontWeight.Bold
+                    )
+                    Icon(
+                        imageVector = Icons.Default.ExpandMore,
+                        contentDescription = null,
+                        modifier = Modifier.size(14.dp)
+                    )
+                }
+                Text(
+                    text = currentLanguage.nativeName,
+                    style = MaterialTheme.typography.labelSmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+            }
+        }
+        DropdownMenu(
+            expanded = expanded,
+            onDismissRequest = { expanded = false }
+        ) {
+            Language.entries.forEach { language ->
+                DropdownMenuItem(
+                    text = {
+                        Text(
+                            text = language.nativeName,
+                            fontWeight = if (language == currentLanguage)
+                                androidx.compose.ui.text.font.FontWeight.Bold
+                            else
+                                androidx.compose.ui.text.font.FontWeight.Normal,
+                            color = if (language == currentLanguage)
+                                MaterialTheme.colorScheme.primary
+                            else
+                                MaterialTheme.colorScheme.onSurface
+                        )
+                    },
+                    onClick = {
+                        languageRepository.setLanguage(language)
+                        expanded = false
+                    },
+                    trailingIcon = {
+                        if (language == currentLanguage) {
+                            Icon(
+                                imageVector = Icons.Default.Check,
+                                contentDescription = null,
+                                tint = MaterialTheme.colorScheme.primary,
+                                modifier = Modifier.size(16.dp)
+                            )
+                        }
+                    }
+                )
+            }
+        }
+    }
+}
+
+@Composable
+private fun GalleryDesktopActions(
+    currentLanguage: Language,
+    languageRepository: LanguageRepository,
+    appSettings: AppSettings,
+    onStorageSettingsClick: () -> Unit,
+    onNavigateToChat: () -> Unit
+) {
+    val isDark = appSettings.isDarkTheme
+
+    Button(
+        onClick = onNavigateToChat,
+        colors = ButtonDefaults.buttonColors(
+            containerColor = MaterialTheme.colorScheme.primary,
+            contentColor = MaterialTheme.colorScheme.onPrimary
+        ),
+        contentPadding = PaddingValues(horizontal = 16.dp, vertical = 8.dp),
+        modifier = Modifier.padding(end = 4.dp)
+    ) {
+        Icon(
+            imageVector = Icons.AutoMirrored.Filled.Chat,
+            contentDescription = null,
+            modifier = Modifier.size(18.dp)
+        )
+        Spacer(modifier = Modifier.width(8.dp))
+        Text(
+            text = Strings.newPrototype.localized(currentLanguage),
+            style = MaterialTheme.typography.labelLarge
+        )
+    }
+
+    IconButton(onClick = onStorageSettingsClick) {
+        Icon(
+            imageVector = Icons.Default.Storage,
+            contentDescription = Strings.storageSelection.localized(currentLanguage)
+        )
+    }
+
+    LanguageDropdown(
+        currentLanguage = currentLanguage,
+        languageRepository = languageRepository
+    )
+
+    IconButton(onClick = { appSettings.isDarkTheme = !isDark }) {
+        Icon(
+            imageVector = if (isDark) Icons.Default.LightMode else Icons.Default.DarkMode,
+            contentDescription = if (isDark) Strings.lightMode.localized(currentLanguage)
+                                 else Strings.darkMode.localized(currentLanguage)
+        )
+    }
+}
+
+@Composable
+private fun GalleryOverflowMenu(
+    currentLanguage: Language,
+    languageRepository: LanguageRepository,
+    appSettings: AppSettings,
+    onStorageSettingsClick: () -> Unit
+) {
+    var overflowExpanded by remember { mutableStateOf(false) }
+    var languageExpanded by remember { mutableStateOf(false) }
+    
+    IconButton(onClick = { overflowExpanded = true }) {
+        Icon(
+            imageVector = Icons.Default.MoreVert,
+            contentDescription = Strings.moreOptions.localized(currentLanguage)
+        )
+    }
+    
+    DropdownMenu(
+        expanded = overflowExpanded,
+        onDismissRequest = { overflowExpanded = false }
+    ) {
+        DropdownMenuItem(
+            text = { Text(Strings.storageSelection.localized(currentLanguage)) },
+            onClick = {
+                overflowExpanded = false
+                onStorageSettingsClick()
+            },
+            leadingIcon = {
+                Icon(
+                    imageVector = Icons.Default.Storage,
+                    contentDescription = null
+                )
+            }
+        )
+
+        DropdownMenuItem(
+            text = {
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Text(Strings.language.localized(currentLanguage))
+                    Icon(
+                        imageVector = if (languageExpanded) Icons.Default.ExpandLess else Icons.Default.ExpandMore,
+                        contentDescription = null,
+                        modifier = Modifier.size(20.dp)
+                    )
+                }
+            },
+            onClick = { languageExpanded = !languageExpanded },
+            leadingIcon = {
+                Icon(
+                    imageVector = Icons.Default.Language,
+                    contentDescription = null
+                )
+            }
+        )
+        
+        if (languageExpanded) {
+            app.prototype.creator.data.model.Language.entries.forEach { language ->
+                DropdownMenuItem(
+                    text = {
+                        Text(
+                            text = if (language == currentLanguage) {
+                                "  ${language.nativeName} ✓"
+                            } else {
+                                "  ${language.nativeName}"
+                            },
+                            style = MaterialTheme.typography.bodyMedium
+                        )
+                    },
+                    onClick = {
+                        languageRepository.setLanguage(language)
+                        overflowExpanded = false
+                    }
+                )
+            }
+        }
+
+        val isDark = appSettings.isDarkTheme
+        DropdownMenuItem(
+            text = {
+                Text(
+                    text = if (isDark) {
+                        Strings.lightMode.localized(currentLanguage)
+                    } else {
+                        Strings.darkMode.localized(currentLanguage)
+                    }
+                )
+            },
+            onClick = {
+                appSettings.isDarkTheme = !isDark
+            },
+            leadingIcon = {
+                Icon(
+                    imageVector = if (isDark) Icons.Default.LightMode else Icons.Default.DarkMode,
+                    contentDescription = null
+                )
+            }
+        )
+    }
+}
 
 // Enum for sort order
 enum class SortOrder {
@@ -54,12 +296,12 @@ fun GalleryScreen(
     initialPrototypes: List<Prototype> = emptyList(),
     onPrototypesLoaded: (List<Prototype>) -> Unit = {},
     onNavigateToChat: () -> Unit = {},
-    onNavigateToPrototype: (String) -> Unit = {}
+    onNavigateToPrototype: (String) -> Unit = {},
+    onStorageSettingsClick: () -> Unit = {}
 ) {
     println("📱 GalleryScreen COMPOSING")
     Napier.d("📱 GalleryScreen is being composed/recomposed")
-    // Get SupabaseService from Koin
-    val supabaseService = org.koin.compose.koinInject<SupabaseService>()
+    val prototypeRepository = org.koin.compose.koinInject<PrototypeRepository>()
     val scope = rememberCoroutineScope()
 
     // State management - Initialize with cached prototypes if available
@@ -76,40 +318,21 @@ fun GalleryScreen(
 
     LaunchedEffect(loadKey) {
         try {
-            if (supabaseService == null) {
-                state = state.copy(
-                    isLoading = false,
-                    error = "Error: SupabaseService no está disponible"
-                )
-                return@LaunchedEffect
-            }
-            
             // Only show loading if we don't have cached prototypes
             if (initialPrototypes.isEmpty()) {
                 state = state.copy(isLoading = true)
             }
             
             try {
-                val result = supabaseService.listPrototypes()
-                
-                result.fold(
-                    onSuccess = { prototypes ->
-                        state = state.copy(
-                            isLoading = false,
-                            prototypes = prototypes
-                        )
-                        // Notify parent about loaded prototypes
-                        onPrototypesLoaded(prototypes)
-                        Napier.d("✅ Prototypes loaded: ${prototypes.size}")
-                    },
-                    onFailure = { error ->
-                        state = state.copy(
-                            isLoading = false,
-                            error = "Error al cargar los prototipos: ${error.message}"
-                        )
-                        Napier.e("❌ Error loading prototypes: ${error.message}", error)
-                    }
-                )
+                prototypeRepository.getPrototypes().collect { prototypes ->
+                    state = state.copy(
+                        isLoading = false,
+                        prototypes = prototypes
+                    )
+                    // Notify parent about loaded prototypes
+                    onPrototypesLoaded(prototypes)
+                    Napier.d("✅ Prototypes loaded: ${prototypes.size}")
+                }
             } catch (e: Exception) {
                 state = state.copy(
                     isLoading = false,
@@ -176,39 +399,45 @@ fun GalleryScreen(
         }
     }
 
+    val isDesktopPlatform = app.prototype.creator.utils.isDesktop
+
     // Main UI
     Scaffold(
+        floatingActionButton = {
+            if (!isDesktopPlatform) {
+                ExtendedFloatingActionButton(
+                    onClick = onNavigateToChat,
+                    icon = {
+                        Icon(
+                            imageVector = Icons.AutoMirrored.Filled.Chat,
+                            contentDescription = null
+                        )
+                    },
+                    text = { Text(Strings.newPrototype.localized(currentLanguage)) },
+                    containerColor = MaterialTheme.colorScheme.primary,
+                    contentColor = MaterialTheme.colorScheme.onPrimary
+                )
+            }
+        },
         topBar = {
             TopAppBar(
                 title = { Text(Strings.galleryTitle.localized(currentLanguage)) },
                 actions = {
-                    // Language selector
-                    LanguageSelector()
-                    
-                    // Theme toggle
-                    IconButton(onClick = {
-                        appSettings.isDarkTheme = !appSettings.isDarkTheme
-                    }) {
-                        Icon(
-                            imageVector = if (appSettings.isDarkTheme) Icons.Default.LightMode else Icons.Default.DarkMode,
-                            contentDescription = if (appSettings.isDarkTheme) Strings.lightMode.localized(currentLanguage) else Strings.darkMode.localized(currentLanguage)
+                    if (isDesktopPlatform) {
+                        GalleryDesktopActions(
+                            currentLanguage = currentLanguage,
+                            languageRepository = languageRepository,
+                            appSettings = appSettings,
+                            onStorageSettingsClick = onStorageSettingsClick,
+                            onNavigateToChat = onNavigateToChat
                         )
-                    }
-                    
-                    // Chat button
-                    TextButton(onClick = onNavigateToChat) {
-                        Column(
-                            horizontalAlignment = Alignment.CenterHorizontally,
-                            modifier = Modifier.padding(horizontal = 8.dp)
-                        ) {
-                            Icon(
-                                imageVector = Icons.AutoMirrored.Filled.Chat,
-                                contentDescription = Strings.chatTitle.localized(currentLanguage),
-                                modifier = Modifier.size(20.dp)
-                            )
-                            Spacer(modifier = Modifier.height(2.dp))
-                            Text(Strings.goToChat.localized(currentLanguage))
-                        }
+                    } else {
+                        GalleryOverflowMenu(
+                            currentLanguage = currentLanguage,
+                            languageRepository = languageRepository,
+                            appSettings = appSettings,
+                            onStorageSettingsClick = onStorageSettingsClick
+                        )
                     }
                 }
             )
@@ -254,41 +483,17 @@ fun GalleryScreen(
                         scope.launch {
                             state = state.copy(isLoading = true, error = null)
                             try {
-                                if (supabaseService == null) {
+                                prototypeRepository.getPrototypes().collect { prototypes ->
                                     state = state.copy(
                                         isLoading = false,
-                                        error = "Error: SupabaseService no está disponible"
+                                        prototypes = prototypes
                                     )
-                                    return@launch
-                                }
-                                
-                                try {
-                                    val result = supabaseService.listPrototypes()
-                                    result.fold(
-                                        onSuccess = { prototypes ->
-                                            state = state.copy(
-                                                isLoading = false,
-                                                prototypes = prototypes,
-                                                error = null
-                                            )
-                                        },
-                                        onFailure = { error ->
-                                            state = state.copy(
-                                                isLoading = false,
-                                                error = "Error al cargar los prototipos: ${error.message}"
-                                            )
-                                        }
-                                    )
-                                } catch (e: Exception) {
-                                    state = state.copy(
-                                        isLoading = false,
-                                        error = "Error: ${e.message ?: "Error desconocido al cargar los prototipos"}"
-                                    )
+                                    onPrototypesLoaded(prototypes)
                                 }
                             } catch (e: Exception) {
                                 state = state.copy(
                                     isLoading = false,
-                                    error = null
+                                    error = "Error: ${e.message ?: "Error desconocido al cargar los prototipos"}"
                                 )
                             }
                         }
@@ -308,6 +513,13 @@ fun GalleryScreen(
                     horizontalAlignment = Alignment.CenterHorizontally,
                     verticalArrangement = Arrangement.Center
                 ) {
+                    Icon(
+                        imageVector = Icons.AutoMirrored.Filled.Chat,
+                        contentDescription = null,
+                        modifier = Modifier.size(72.dp),
+                        tint = MaterialTheme.colorScheme.primary.copy(alpha = 0.4f)
+                    )
+                    Spacer(modifier = Modifier.height(16.dp))
                     Text(
                         text = Strings.noPrototypes.localized(currentLanguage),
                         style = MaterialTheme.typography.titleMedium,
@@ -319,6 +531,22 @@ fun GalleryScreen(
                         textAlign = TextAlign.Center,
                         color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
+                    Spacer(modifier = Modifier.height(24.dp))
+                    Button(
+                        onClick = onNavigateToChat,
+                        contentPadding = PaddingValues(horizontal = 24.dp, vertical = 12.dp)
+                    ) {
+                        Icon(
+                            imageVector = Icons.AutoMirrored.Filled.Chat,
+                            contentDescription = null,
+                            modifier = Modifier.size(18.dp)
+                        )
+                        Spacer(modifier = Modifier.width(8.dp))
+                        Text(
+                            text = Strings.startInChat.localized(currentLanguage),
+                            style = MaterialTheme.typography.labelLarge
+                        )
+                    }
                 }
             }
 
@@ -461,17 +689,12 @@ fun GalleryScreen(
                             onFavoriteClick = {
                                 scope.launch {
                                     try {
-                                        supabaseService.toggleFavorite(prototype.id)
+                                        val updatedPrototype = prototype.copy(isFavorite = !prototype.isFavorite)
+                                        prototypeRepository.updatePrototype(updatedPrototype)
                                         // Recargar la lista para actualizar el estado de favoritos
-                                        val result = supabaseService.listPrototypes()
-                                        result.fold(
-                                            onSuccess = { prototypes ->
-                                                state = state.copy(prototypes = prototypes)
-                                            },
-                                            onFailure = { error ->
-                                                Napier.e("Error reloading prototypes: ${error.message}")
-                                            }
-                                        )
+                                        prototypeRepository.getPrototypes().collect { prototypes ->
+                                            state = state.copy(prototypes = prototypes)
+                                        }
                                     } catch (e: Exception) {
                                         Napier.e("Error toggling favorite", e)
                                     }

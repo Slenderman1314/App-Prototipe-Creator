@@ -1,6 +1,7 @@
 package app.prototype.creator.di
 
 import android.content.Context
+import app.prototype.creator.db.DatabaseDriverFactory
 import io.github.aakira.napier.DebugAntilog
 import io.github.aakira.napier.Napier
 import io.ktor.client.HttpClient
@@ -18,6 +19,7 @@ import io.ktor.serialization.kotlinx.json.json
 import kotlinx.serialization.json.Json
 import org.koin.android.ext.koin.androidContext
 import org.koin.core.context.GlobalContext
+import org.koin.dsl.module
 
 actual fun initPlatformKoin() {
     // Platform-specific initialization is handled in MainActivity
@@ -54,12 +56,17 @@ actual fun createConfiguredHttpClient(): HttpClient {
     }
 }
 
+// Android-specific module
+val androidModule = module {
+    single { DatabaseDriverFactory(get()) }
+}
+
 fun initKoin(context: Context) {
     if (GlobalContext.getOrNull() == null) {
         org.koin.core.context.startKoin {
             androidContext(context)
             Napier.base(DebugAntilog())
-            modules(appModule, viewModelModule)
+            modules(appModule, androidModule, viewModelModule)
         }
     }
 }
