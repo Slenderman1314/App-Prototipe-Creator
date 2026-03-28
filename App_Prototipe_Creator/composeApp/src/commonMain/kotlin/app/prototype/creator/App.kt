@@ -33,6 +33,7 @@ import org.koin.compose.koinInject
 sealed class Screen(val route: String) {
     object Gallery : Screen("gallery")
     object Chat : Screen("chat")
+    object ApiKeysSettings : Screen("api_keys_settings")
     object PrototypeDetail : Screen("prototype/{prototypeId}") {
         fun createRoute(prototypeId: String) = "prototype/$prototypeId"
     }
@@ -283,10 +284,9 @@ private fun MainAppContent(
     // Cache gallery state to survive screen changes
     var cachedPrototypes by remember { mutableStateOf<List<app.prototype.creator.data.model.Prototype>>(emptyList()) }
     
-    // Storage and backend settings dialog state
+    // Storage settings dialog state
     val storagePreferences = koinInject<StoragePreferences>()
     var showStorageSettingsDialog by remember { mutableStateOf(false) }
-    var showBackendDialog by remember { mutableStateOf(false) }
     
     // Get language repository for dialogs
     val languageRepository = koinInject<LanguageRepository>()
@@ -303,22 +303,6 @@ private fun MainAppContent(
             onDismiss = {
                 showStorageSettingsDialog = false
                 Napier.d("💾 Storage settings dialog dismissed")
-            }
-        )
-    }
-    
-    // Show backend settings dialog when requested
-    if (showBackendDialog) {
-        BackendSelectorDialog(
-            currentLanguage = currentLanguage,
-            storagePreferences = storagePreferences,
-            onDismiss = {
-                showBackendDialog = false
-                Napier.d("🤖 Backend settings dialog dismissed")
-            },
-            onBackendChanged = { backend ->
-                Napier.d("🤖 Backend changed to: $backend - App will need restart to apply changes")
-                showBackendDialog = false
             }
         )
     }
@@ -348,11 +332,10 @@ private fun MainAppContent(
                     },
                     onStorageSettingsClick = {
                         showStorageSettingsDialog = true
-                        Napier.d("💾 Storage settings button clicked")
+                        Napier.d("Storage settings button clicked")
                     },
-                    onBackendSettingsClick = {
-                        showBackendDialog = true
-                        Napier.d("🤖 Backend settings button clicked")
+                    onApiKeysSettingsClick = {
+                        currentScreen = Screen.ApiKeysSettings
                     }
                 )
             }
@@ -367,6 +350,15 @@ private fun MainAppContent(
                         prototypeVersion++ // Increment version to force recreation
                         currentScreen = Screen.PrototypeDetail
                     }
+                )
+            }
+            is Screen.ApiKeysSettings -> {
+                println("🖥️ APP.KT: Rendering ApiKeysSettingsScreen")
+                @Suppress("ClassName")
+                app.prototype.creator.screens.ApiKeysSettingsScreen(
+                    currentLanguage = languageRepository.currentLanguage.collectAsState().value,
+                    storagePreferences = org.koin.compose.koinInject(),
+                    onNavigateBack = { currentScreen = Screen.Gallery }
                 )
             }
             is Screen.PrototypeDetail -> {

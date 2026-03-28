@@ -9,7 +9,7 @@ import app.prototype.creator.db.DatabaseDriverFactory
 import app.prototype.creator.db.AppDatabase
 import app.prototype.creator.data.service.AiService
 import app.prototype.creator.data.service.N8nAIService
-import app.prototype.creator.data.service.SpringBootAIService
+import app.prototype.creator.data.service.MultiProviderAIService
 import app.prototype.creator.data.service.ExportService
 import app.prototype.creator.data.service.CommonExportService
 import app.prototype.creator.data.service.PlatformExporter
@@ -41,16 +41,16 @@ import org.koin.dsl.module
  */
 fun initKoin() {
     try {
-        Napier.d("📦 initKoin() called")
+        Napier.d("initKoin() called")
         
         // Check if Koin is already started
         val koin = org.koin.core.context.GlobalContext.getOrNull()
         if (koin != null) {
-            Napier.d("ℹ️ Koin already started, skipping initialization")
+            Napier.d("ℹKoin already started, skipping initialization")
             return
         }
         
-        Napier.d("🔧 Starting Koin...")
+        Napier.d("Starting Koin...")
         startKoin {
             // Configure logger
             logger(
@@ -115,28 +115,31 @@ val appModule = module {
         )
     }
 
-    // AI Service - Configurable backend (n8n or Spring Boot)
+    // AI Service - Multi-provider support
     single<AiService> {
         val storagePreferences = get<StoragePreferences>()
-        val backendType = storagePreferences.getAiBackend()
-        Napier.d("🤖 Initializing AI Service with backend: $backendType")
+        val provider = storagePreferences.getAiProvider()
+        Napier.d("Initializing AI Service with provider: $provider")
         
-        when (backendType) {
-            StoragePreferences.BACKEND_SPRING_BOOT -> {
-                Napier.d("✅ Using Spring Boot AI backend")
-                SpringBootAIService(
-                    client = get(),
-                    baseUrl = Config.springBootBaseUrl,
-                    apiKey = Config.springBootApiKey
-                )
-            }
-            else -> {
-                Napier.d("✅ Using n8n AI backend (default)")
+        when (provider) {
+            // ========== N8N PROVIDER (FOR TESTING ONLY) ==========
+            // TODO: Remove this entire when branch when n8n is no longer needed
+            StoragePreferences.PROVIDER_N8N -> {
+                Napier.d("Using n8n AI backend")
                 N8nAIService(
                     client = get(),
                     baseUrl = Config.n8nBaseUrl,
                     webhookPath = Config.n8nWebhookPath,
                     apiKey = Config.n8nApiKey
+                )
+            }
+            // ====================================================
+            
+            else -> {
+                Napier.d("Using Multi-Provider AI Service with provider: $provider")
+                MultiProviderAIService(
+                    client = get(),
+                    preferences = storagePreferences
                 )
             }
         }

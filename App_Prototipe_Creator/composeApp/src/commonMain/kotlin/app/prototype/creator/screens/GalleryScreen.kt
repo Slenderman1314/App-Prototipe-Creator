@@ -17,6 +17,7 @@ import androidx.compose.material.icons.filled.Language
 import androidx.compose.material.icons.filled.LightMode
 import androidx.compose.material.icons.filled.MoreVert
 import androidx.compose.material.icons.filled.Search
+import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material.icons.filled.Sort
 import androidx.compose.material.icons.filled.Storage
 import androidx.compose.material.icons.outlined.FavoriteBorder
@@ -128,7 +129,7 @@ private fun GalleryDesktopActions(
     languageRepository: LanguageRepository,
     appSettings: AppSettings,
     onStorageSettingsClick: () -> Unit,
-    onBackendSettingsClick: () -> Unit,
+    onApiKeysSettingsClick: () -> Unit,
     onNavigateToChat: () -> Unit
 ) {
     val isDark = appSettings.isDarkTheme
@@ -160,11 +161,21 @@ private fun GalleryDesktopActions(
             contentDescription = Strings.storageSelection.localized(currentLanguage)
         )
     }
-
-    IconButton(onClick = onBackendSettingsClick) {
+    
+    // API Keys button with text
+    OutlinedButton(
+        onClick = onApiKeysSettingsClick,
+        contentPadding = PaddingValues(horizontal = 12.dp, vertical = 8.dp)
+    ) {
         Icon(
-            imageVector = Icons.Default.Cloud,
-            contentDescription = if (currentLanguage == Language.SPANISH) "Backend IA" else "AI Backend"
+            imageVector = Icons.Default.Settings,
+            contentDescription = null,
+            modifier = Modifier.size(18.dp)
+        )
+        Spacer(modifier = Modifier.width(6.dp))
+        Text(
+            text = Strings.apiKeysSettings.localized(currentLanguage),
+            style = MaterialTheme.typography.labelMedium
         )
     }
 
@@ -183,12 +194,12 @@ private fun GalleryDesktopActions(
 }
 
 @Composable
-private fun GalleryOverflowMenu(
+private fun GalleryMobileActions(
     currentLanguage: Language,
     languageRepository: LanguageRepository,
     appSettings: AppSettings,
     onStorageSettingsClick: () -> Unit,
-    onBackendSettingsClick: () -> Unit
+    onApiKeysSettingsClick: () -> Unit
 ) {
     var overflowExpanded by remember { mutableStateOf(false) }
     var languageExpanded by remember { mutableStateOf(false) }
@@ -217,16 +228,16 @@ private fun GalleryOverflowMenu(
                 )
             }
         )
-
+        
         DropdownMenuItem(
-            text = { Text(if (currentLanguage == Language.SPANISH) "Backend IA" else "AI Backend") },
+            text = { Text(Strings.configureApiKeys.localized(currentLanguage)) },
             onClick = {
                 overflowExpanded = false
-                onBackendSettingsClick()
+                onApiKeysSettingsClick()
             },
             leadingIcon = {
                 Icon(
-                    imageVector = Icons.Default.Cloud,
+                    imageVector = Icons.Default.Settings,
                     contentDescription = null
                 )
             }
@@ -262,7 +273,7 @@ private fun GalleryOverflowMenu(
                     text = {
                         Text(
                             text = if (language == currentLanguage) {
-                                "  ${language.nativeName} ✓"
+                                "  ${language.nativeName} "
                             } else {
                                 "  ${language.nativeName}"
                             },
@@ -322,10 +333,10 @@ fun GalleryScreen(
     onNavigateToChat: () -> Unit = {},
     onNavigateToPrototype: (String) -> Unit = {},
     onStorageSettingsClick: () -> Unit = {},
-    onBackendSettingsClick: () -> Unit = {}
+    onApiKeysSettingsClick: () -> Unit = {}
 ) {
-    println("📱 GalleryScreen COMPOSING")
-    Napier.d("📱 GalleryScreen is being composed/recomposed")
+    println(" GalleryScreen COMPOSING")
+    Napier.d(" GalleryScreen is being composed/recomposed")
     val prototypeRepository = org.koin.compose.koinInject<PrototypeRepository>()
     val scope = rememberCoroutineScope()
 
@@ -356,21 +367,21 @@ fun GalleryScreen(
                     )
                     // Notify parent about loaded prototypes
                     onPrototypesLoaded(prototypes)
-                    Napier.d("✅ Prototypes loaded: ${prototypes.size}")
+                    Napier.d(" Prototypes loaded: ${prototypes.size}")
                 }
             } catch (e: Exception) {
                 state = state.copy(
                     isLoading = false,
                     error = "Error: ${e.message ?: "Error desconocido al cargar los prototipos"}"
                 )
-                Napier.e("❌ Exception in loadPrototypes", e)
+                Napier.e(" Exception in loadPrototypes", e)
             }
         } catch (e: Exception) {
             state = state.copy(
                 isLoading = false,
                 error = e.message ?: "An error occurred while loading prototypes"
             )
-            Napier.e("❌ Exception in loadPrototypes", e)
+            Napier.e(" Exception in loadPrototypes", e)
         }
     }
 
@@ -420,7 +431,7 @@ fun GalleryScreen(
             updateFn.invoke(null, isDarkTheme)
         } catch (e: Exception) {
             // Not on desktop or function not available
-            Napier.d("ℹ️ WebView theme update not available: ${e.message}")
+            Napier.d(" WebView theme update not available: ${e.message}")
         }
     }
 
@@ -454,16 +465,16 @@ fun GalleryScreen(
                             languageRepository = languageRepository,
                             appSettings = appSettings,
                             onStorageSettingsClick = onStorageSettingsClick,
-                            onBackendSettingsClick = onBackendSettingsClick,
+                            onApiKeysSettingsClick = onApiKeysSettingsClick,
                             onNavigateToChat = onNavigateToChat
                         )
                     } else {
-                        GalleryOverflowMenu(
+                        GalleryMobileActions(
                             currentLanguage = currentLanguage,
                             languageRepository = languageRepository,
                             appSettings = appSettings,
                             onStorageSettingsClick = onStorageSettingsClick,
-                            onBackendSettingsClick = onBackendSettingsClick
+                            onApiKeysSettingsClick = onApiKeysSettingsClick
                         )
                     }
                 }
@@ -826,11 +837,11 @@ private fun PrototypeItem(
                     modifier = Modifier.fillMaxWidth(),
                     verticalArrangement = Arrangement.spacedBy(12.dp)
                 ) {
-                    val appNameLabel = if (currentLanguage == app.prototype.creator.data.model.Language.SPANISH) "Nombre de la App" else "App Name"
-                    val userIdeaLabel = if (currentLanguage == app.prototype.creator.data.model.Language.SPANISH) "Idea del Usuario" else "User Idea"
-                    val validatedDescLabel = if (currentLanguage == app.prototype.creator.data.model.Language.SPANISH) "Descripción Validada" else "Validated Description"
-                    val validationNotesLabel = if (currentLanguage == app.prototype.creator.data.model.Language.SPANISH) "Notas de Validación" else "Validation Notes"
-                    val creationDateLabel = if (currentLanguage == app.prototype.creator.data.model.Language.SPANISH) "Fecha de Creación" else "Creation Date"
+                    val appNameLabel = Strings.appName.localized(currentLanguage)
+                    val userIdeaLabel = Strings.userIdea.localized(currentLanguage)
+                    val validatedDescLabel = Strings.validatedDescription.localized(currentLanguage)
+                    val validationNotesLabel = Strings.validationNotes.localized(currentLanguage)
+                    val creationDateLabel = Strings.creationDate.localized(currentLanguage)
                     
                     DetailItem(label = appNameLabel, value = prototype.name)
                     DetailItem(label = userIdeaLabel, value = prototype.userIdea ?: Strings.notAvailable.localized(currentLanguage))
@@ -841,7 +852,7 @@ private fun PrototypeItem(
             },
             confirmButton = {
                 TextButton(onClick = { showDetailsDialog = false }) {
-                    Text(if (currentLanguage == app.prototype.creator.data.model.Language.SPANISH) "Cerrar" else "Close")
+                    Text(Strings.close.localized(currentLanguage))
                 }
             }
         )

@@ -46,6 +46,33 @@ App Prototype Creator es una herramienta que utiliza inteligencia artificial par
          └──────────────────────────────┴──► PrototypeDetailScreen
 ```
 
+## 🔒 Seguridad de API Keys
+
+**⚠️ IMPORTANTE**: Esta aplicación requiere que configures tus propias API keys de proveedores de IA.
+
+### **Configuración de API Keys**
+
+1. **Obtén una API key** de al menos uno de estos proveedores:
+   - [OpenAI](https://platform.openai.com/api-keys) - GPT-4, GPT-4o
+   - [Anthropic](https://console.anthropic.com/settings/keys) - Claude 3.5
+   - [Google](https://aistudio.google.com/app/apikey) - Gemini (Plan gratuito disponible)
+
+2. **Configura la key en la app**:
+   - Abre la aplicación
+   - Ve a ChatScreen → Menú (⋮) → "Configurar API Keys"
+   - Ingresa tu API key
+   - Selecciona el proveedor desde el menú
+
+3. **⚠️ LEE LA GUÍA DE SEGURIDAD**: [API_KEYS_SECURITY.md](./API_KEYS_SECURITY.md)
+
+### **Protección de tus Keys**
+
+- ✅ Las keys se almacenan **solo en tu dispositivo** (cifradas en Android)
+- ✅ Comunicación **HTTPS directa** con el proveedor
+- ✅ **Sin backend intermedio** - tus keys nunca se envían a nuestros servidores
+- ⚠️ **Configura límites de gasto** en tu cuenta del proveedor
+- ⚠️ **Nunca compartas** tus API keys
+
 ##  Requisitos Previos
 
 - **JDK 17** o superior

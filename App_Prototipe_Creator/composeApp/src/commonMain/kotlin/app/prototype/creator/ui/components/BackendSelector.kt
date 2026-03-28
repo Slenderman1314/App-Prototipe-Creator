@@ -3,11 +3,14 @@ package app.prototype.creator.ui.components
 import androidx.compose.foundation.layout.*
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Check
+import androidx.compose.material.icons.filled.CheckCircle
 import androidx.compose.material.icons.filled.Cloud
+import androidx.compose.material.icons.filled.Error
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
 import app.prototype.creator.data.model.Language
 import app.prototype.creator.utils.StoragePreferences
@@ -21,7 +24,7 @@ fun BackendSelectorDialog(
     onDismiss: () -> Unit,
     onBackendChanged: (String) -> Unit
 ) {
-    var selectedBackend by remember { mutableStateOf(storagePreferences.getAiBackend()) }
+    var selectedProvider by remember { mutableStateOf(storagePreferences.getAiProvider()) }
     
     AlertDialog(
         onDismissRequest = onDismiss,
@@ -37,9 +40,9 @@ fun BackendSelectorDialog(
                 )
                 Text(
                     text = if (currentLanguage == Language.SPANISH) 
-                        "Seleccionar Backend de IA" 
+                        "Seleccionar Proveedor de IA" 
                     else 
-                        "Select AI Backend",
+                        "Select AI Provider",
                     style = MaterialTheme.typography.headlineSmall
                 )
             }
@@ -51,44 +54,70 @@ fun BackendSelectorDialog(
             ) {
                 Text(
                     text = if (currentLanguage == Language.SPANISH)
-                        "Elige el backend que procesará las conversaciones con IA:"
+                        "Elige el proveedor de IA que procesará las conversaciones:"
                     else
-                        "Choose the backend that will process AI conversations:",
+                        "Choose the AI provider that will process conversations:",
                     style = MaterialTheme.typography.bodyMedium,
                     color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
                 
                 Spacer(modifier = Modifier.height(8.dp))
                 
-                // Spring Boot Option
-                BackendOption(
-                    title = "Spring Boot",
+                // OpenAI Option
+                ProviderOption(
+                    title = "OpenAI",
                     description = if (currentLanguage == Language.SPANISH)
-                        "Backend personalizado con control total"
+                        "GPT-4, GPT-4o - Mejor calidad"
                     else
-                        "Custom backend with full control",
-                    isSelected = selectedBackend == StoragePreferences.BACKEND_SPRING_BOOT,
-                    onClick = { selectedBackend = StoragePreferences.BACKEND_SPRING_BOOT }
+                        "GPT-4, GPT-4o - Best quality",
+                    isSelected = selectedProvider == StoragePreferences.PROVIDER_OPENAI,
+                    hasApiKey = !storagePreferences.getOpenAiApiKey().isNullOrBlank(),
+                    onClick = { selectedProvider = StoragePreferences.PROVIDER_OPENAI }
+                )
+                
+                // Anthropic Option
+                ProviderOption(
+                    title = "Anthropic",
+                    description = if (currentLanguage == Language.SPANISH)
+                        "Claude 3 - Excelente alternativa"
+                    else
+                        "Claude 3 - Excellent alternative",
+                    isSelected = selectedProvider == StoragePreferences.PROVIDER_ANTHROPIC,
+                    hasApiKey = !storagePreferences.getAnthropicApiKey().isNullOrBlank(),
+                    onClick = { selectedProvider = StoragePreferences.PROVIDER_ANTHROPIC }
+                )
+                
+                // Google Option
+                ProviderOption(
+                    title = "Google",
+                    description = if (currentLanguage == Language.SPANISH)
+                        "Gemini - Gratis con límites"
+                    else
+                        "Gemini - Free with limits",
+                    isSelected = selectedProvider == StoragePreferences.PROVIDER_GOOGLE,
+                    hasApiKey = !storagePreferences.getGoogleApiKey().isNullOrBlank(),
+                    onClick = { selectedProvider = StoragePreferences.PROVIDER_GOOGLE }
                 )
                 
                 // n8n Option
-                BackendOption(
+                ProviderOption(
                     title = "n8n",
                     description = if (currentLanguage == Language.SPANISH)
-                        "Workflows automatizados con n8n"
+                        "Workflows personalizados"
                     else
-                        "Automated workflows with n8n",
-                    isSelected = selectedBackend == StoragePreferences.BACKEND_N8N,
-                    onClick = { selectedBackend = StoragePreferences.BACKEND_N8N }
+                        "Custom workflows",
+                    isSelected = selectedProvider == StoragePreferences.PROVIDER_N8N,
+                    hasApiKey = true,
+                    onClick = { selectedProvider = StoragePreferences.PROVIDER_N8N }
                 )
             }
         },
         confirmButton = {
             Button(
                 onClick = {
-                    storagePreferences.setAiBackend(selectedBackend)
-                    Napier.d("🤖 Backend changed to: $selectedBackend")
-                    onBackendChanged(selectedBackend)
+                    storagePreferences.setAiProvider(selectedProvider)
+                    Napier.d("Provider changed to: $selectedProvider")
+                    onBackendChanged(selectedProvider)
                     onDismiss()
                 }
             ) {
@@ -108,10 +137,11 @@ fun BackendSelectorDialog(
 }
 
 @Composable
-private fun BackendOption(
+private fun ProviderOption(
     title: String,
     description: String,
     isSelected: Boolean,
+    hasApiKey: Boolean,
     onClick: () -> Unit
 ) {
     Card(
@@ -132,14 +162,37 @@ private fun BackendOption(
             verticalAlignment = Alignment.CenterVertically
         ) {
             Column(modifier = Modifier.weight(1f)) {
-                Text(
-                    text = title,
-                    style = MaterialTheme.typography.titleMedium,
-                    color = if (isSelected)
-                        MaterialTheme.colorScheme.onPrimaryContainer
-                    else
-                        MaterialTheme.colorScheme.onSurfaceVariant
-                )
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
+                    Text(
+                        text = title,
+                        style = MaterialTheme.typography.titleMedium,
+                        color = if (isSelected)
+                            MaterialTheme.colorScheme.onPrimaryContainer
+                        else
+                            MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                    
+                    // API Key indicator
+                    if (hasApiKey) {
+                        Icon(
+                            imageVector = Icons.Default.CheckCircle,
+                            contentDescription = null,
+                            tint = Color(0xFF4CAF50),
+                            modifier = Modifier.size(16.dp)
+                        )
+                    } else {
+                        Icon(
+                            imageVector = Icons.Default.Error,
+                            contentDescription = null,
+                            tint = Color(0xFFF44336),
+                            modifier = Modifier.size(16.dp)
+                        )
+                    }
+                }
+                
                 Text(
                     text = description,
                     style = MaterialTheme.typography.bodySmall,
