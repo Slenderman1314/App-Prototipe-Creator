@@ -5,7 +5,6 @@
 ![Kotlin](https://img.shields.io/badge/Kotlin-Multiplatform-purple?logo=kotlin)
 ![Compose](https://img.shields.io/badge/Compose-Multiplatform-blue)
 ![Platform](https://img.shields.io/badge/Platform-Android%20%7C%20Desktop-green)
-![Spring Boot](https://img.shields.io/badge/Backend-Spring%20Boot-6DB33F?logo=springboot)
 ![Firebase](https://img.shields.io/badge/Cloud%20DB-Firebase-FFCA28?logo=firebase&logoColor=black)
 ![Tests](https://img.shields.io/badge/Tests-90%20Passing-success?logo=junit5)
 ![Coverage](https://img.shields.io/badge/Coverage-93%25-brightgreen)
