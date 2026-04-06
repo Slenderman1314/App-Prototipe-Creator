@@ -183,11 +183,16 @@ class StoragePreferences(private val settings: Settings) {
      */
     fun setOpenAiApiKey(apiKey: String) {
         require(apiKey.isNotBlank()) { "API key cannot be blank" }
-        require(apiKey.startsWith("sk-") && apiKey.length > 20) {
-            "Invalid OpenAI API key format. Must start with 'sk-' and be at least 20 characters"
+        
+        // Trim whitespace and log details
+        val trimmedKey = apiKey.trim()
+        Napier.d("🔑 Setting OpenAI API key - Length: ${trimmedKey.length}, Starts with: ${trimmedKey.take(8)}, Ends with: ${trimmedKey.takeLast(4)}")
+        
+        require((trimmedKey.startsWith("sk-") || trimmedKey.startsWith("sk-proj-")) && trimmedKey.length > 20) {
+            "Invalid OpenAI API key format. Must start with 'sk-' or 'sk-proj-' and be at least 20 characters"
         }
-        settings.putString(KEY_OPENAI_API_KEY, apiKey)
-        Napier.d("OpenAI API key configured")
+        settings.putString(KEY_OPENAI_API_KEY, trimmedKey)
+        Napier.d("✅ OpenAI API key configured successfully")
     }
     
     /**

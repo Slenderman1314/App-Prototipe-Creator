@@ -1,140 +1,177 @@
 #  App Prototype Creator
 
-> Una aplicación multiplataforma que transforma ideas en prototipos detallados de aplicaciones mediante IA, con soporte para chat interactivo y visualización de prototipos.
+> A cross-platform application that transforms ideas into detailed application prototypes using AI, with support for interactive chat and prototype visualization.
 
 ![Kotlin](https://img.shields.io/badge/Kotlin-Multiplatform-purple?logo=kotlin)
 ![Compose](https://img.shields.io/badge/Compose-Multiplatform-blue)
 ![Platform](https://img.shields.io/badge/Platform-Android%20%7C%20Desktop-green)
-![Supabase](https://img.shields.io/badge/Backend-Supabase-3ECF8E?logo=supabase)
+![License](https://img.shields.io/badge/License-MIT-yellow)
 
-##  Descripción
+##  Description
 
-App Prototype Creator es una herramienta que utiliza inteligencia artificial para convertir ideas conceptuales en prototipos funcionales y detallados de aplicaciones. Construida con Kotlin Multiplatform y Compose Multiplatform, ofrece una experiencia fluida tanto en Android como en escritorio, permitiendo a desarrolladores y diseñadores visualizar y exportar sus conceptos de manera eficiente.
+App Prototype Creator is a tool that uses artificial intelligence to convert conceptual ideas into functional and detailed application prototypes. Built with Kotlin Multiplatform and Compose Multiplatform, it offers a seamless experience on both Android and desktop, allowing developers and designers to visualize and export their concepts efficiently.
 
-##  Características Principales
+##  Key Features
 
--  **Chat con IA**: Interfaz conversacional para describir tu idea de aplicación
--  **Galería de Prototipos**: Visualiza todos tus prototipos creados en una galería organizada
-- 
--  **Vista Detallada**: Explora cada prototipo con detalles completos y exportación
--  **Multiplataforma**: Funciona en Android y Desktop (JVM) con código compartido
--  **Tema Personalizable**: Soporte para tema claro y oscuro
--  **Multiidioma**: Sistema de internacionalización integrado (i18n)
--  **Persistencia en la Nube**: Integración con Supabase para almacenamiento
--  **Exportación**: Capacidad de exportar prototipos generados
+-  **Multi-Provider AI Chat**: Support for OpenAI GPT-4o, Anthropic Claude 3.5 Sonnet, and Google Gemini 1.5 Flash
+-  **Prototype Generation**: Automatic creation of interactive prototypes through natural conversation
+-  **Prototype Gallery**: View, search, and manage all your created prototypes
+-  **HTML Visualization**: Rendering with JavaFX WebView (Desktop) and Android WebView
+-  **Export System**: Export to interactive HTML and static PDF
+  - Desktop: Native dialogs with JFileChooser
+  - Android: Direct save to Downloads
+-  **Cross-Platform**: Android 8.0+ and Desktop (Windows, macOS, Linux) with ~80% shared code
+-  **Light/Dark Theme**: Dynamic switching with WebView synchronization
+-  **Internationalization**: Spanish and English with real-time switching
+-  **Local Persistence**: SQLDelight for cross-platform database
+-  **Secure Storage**: 
+  - Desktop: Java Preferences API
+  - Android: EncryptedSharedPreferences with AES256-GCM
+-  **Security**: API keys stored locally only, FLAG_SECURE on Android
 
-##  Arquitectura
+##  Architecture
 
-### Stack Tecnológico
+### Tech Stack
 
-- **Kotlin Multiplatform**: Compartición de código entre plataformas
-- **Compose Multiplatform**: Framework UI declarativo moderno
-- **Supabase**: Backend as a Service para almacenamiento y autenticación
-- **Koin**: Inyección de dependencias
-- **Napier**: Logging multiplataforma
-- **Material Design 3**: Sistema de diseño moderno
+#### Frontend
+- **Kotlin Multiplatform**: Code sharing across platforms (~80%)
+- **Compose Multiplatform**: Modern declarative UI framework
+- **Material Design 3**: Modern design system
+- **JavaFX WebView**: HTML rendering on Desktop
+- **Android WebView**: HTML rendering on Android
 
-### Estructura de Pantallas
+#### APIs & Services
+- **OpenAI GPT-4o**: Main model for prototype generation
+- **Anthropic Claude 3.5 Sonnet**: Premium alternative with better instruction following
+- **Google Gemini 1.5 Flash**: Economic and fast option
+- **Ktor Client**: Cross-platform HTTP client (CIO on Desktop, OkHttp on Android)
+
+#### Persistence
+- **SQLDelight**: Cross-platform local database
+- **StoragePreferences**: Secure storage for API keys
+  - Desktop: Java Preferences API
+  - Android: EncryptedSharedPreferences
+
+#### Utilities
+- **Koin**: Dependency injection
+- **Napier**: Cross-platform logging
+- **iText 7 html2pdf**: PDF generation from HTML
+- **Kotlinx Coroutines**: Asynchronous programming
+- **StateFlow**: Reactive state management
+
+### Screen Structure
 
 ```
 ┌─────────────────┐
-│  GalleryScreen  │ ◄─── Pantalla inicial
+│  GalleryScreen  │ ◄─── Initial screen
 └────────┬────────┘
          │
          ├──► ChatScreen ────► onOpenPrototype()
          │                              │
-         └──────────────────────────────┴──► PrototypeDetailScreen
+         └───────────────────────────────┴──► PrototypeDetailScreen
 ```
 
-## 🔒 Seguridad de API Keys
+## 🔒 API Keys Security
 
-**⚠️ IMPORTANTE**: Esta aplicación requiere que configures tus propias API keys de proveedores de IA.
+**⚠️ IMPORTANT**: This application requires you to configure your own AI provider API keys.
 
-### **Configuración de API Keys**
+### **API Keys Setup**
 
-1. **Obtén una API key** de al menos uno de estos proveedores:
+1. **Get an API key** from at least one of these providers:
    - [OpenAI](https://platform.openai.com/api-keys) - GPT-4, GPT-4o
    - [Anthropic](https://console.anthropic.com/settings/keys) - Claude 3.5
-   - [Google](https://aistudio.google.com/app/apikey) - Gemini (Plan gratuito disponible)
+   - [Google](https://aistudio.google.com/app/apikey) - Gemini (Free plan available)
 
-2. **Configura la key en la app**:
-   - Abre la aplicación
-   - Ve a ChatScreen → Menú (⋮) → "Configurar API Keys"
-   - Ingresa tu API key
-   - Selecciona el proveedor desde el menú
+2. **Configure the key in the app**:
+   - Open the application
+   - Go to ChatScreen → Menu (⋮) → "Configure API Keys"
+   - Enter your API key
+   - Select the provider from the menu
 
-3. **⚠️ LEE LA GUÍA DE SEGURIDAD**: [API_KEYS_SECURITY.md](./API_KEYS_SECURITY.md)
+3. **⚠️ READ THE SECURITY GUIDE**: [API_KEYS_SECURITY.md](./API_KEYS_SECURITY.md)
 
-### **Protección de tus Keys**
+### **Protecting Your Keys**
 
-- ✅ Las keys se almacenan **solo en tu dispositivo** (cifradas en Android)
-- ✅ Comunicación **HTTPS directa** con el proveedor
-- ✅ **Sin backend intermedio** - tus keys nunca se envían a nuestros servidores
-- ⚠️ **Configura límites de gasto** en tu cuenta del proveedor
-- ⚠️ **Nunca compartas** tus API keys
+-  Keys are stored **only on your device** (encrypted on Android)
+-  **Direct HTTPS** communication with the provider
+- **No intermediate backend** - your keys are never sent to our servers
+- **Set spending limits** on your provider account
+- **Never share** your API keys
 
-##  Requisitos Previos
+##  Prerequisites
 
-- **JDK 17** o superior
-- **Android Studio** Arctic Fox o superior (para desarrollo Android)
-- **IntelliJ IDEA** (recomendado para desarrollo Desktop)
+- **JDK 17** or higher
+- **Android Studio** Hedgehog or higher (for Android development)
+- **IntelliJ IDEA** 2023.2+ (recommended for Desktop development)
 - **Gradle 8.0+**
-- Cuenta de **Supabase** (para funcionalidad completa)
+- **API Key** from at least one of these providers:
+  - [OpenAI](https://platform.openai.com/api-keys)
+  - [Anthropic](https://console.anthropic.com/settings/keys)
+  - [Google AI Studio](https://aistudio.google.com/app/apikey)
 
-##  Instalación y Configuración
+##  Installation & Setup
 
-### 1. Clonar el Repositorio
+### 1. Clone the Repository
 
 ```bash
 git clone https://github.com/Slenderman1314/App-Prototipe-Creator.git
 cd App-Prototipe-Creator
 ```
 
-### 2. Configurar Variables de Entorno
+### 2. Configure API Keys
 
-Crea un archivo `.env` en la raíz del proyecto con las siguientes variables:
+**API keys are configured from the application interface:**
+
+1. Run the application (Desktop or Android)
+2. Go to **ChatScreen** → Menu (⋮) → **"Configure API Keys"**
+3. Enter your API key from your preferred provider
+4. Select the provider from the dropdown menu
+5. Save the configuration
+
+**Optional - Environment variables for development:**
+
+You can create a `.env` file in the project root to automatically load API keys on Desktop:
 
 ```env
-SUPABASE_URL=tu_url_de_supabase
-SUPABASE_KEY=tu_clave_de_supabase
-N8N_WEBHOOK_PATH=n8n_webhook_path
-...
+OPENAI_API_KEY=your_openai_key
+ANTHROPIC_API_KEY=your_anthropic_key
+GOOGLE_API_KEY=your_google_key
 ```
 
-> **Nota**: El archivo `.env` debe estar en la raíz del proyecto. La aplicación busca automáticamente en `.env`, `../.env` o `../../.env`
+> **Note**: The `.env` file is optional and only works on Desktop. On Android you must always configure keys from the UI.
 
-### 3. Compilar y Ejecutar
+### 3. Build & Run
 
 ####  Android
 
-**En macOS/Linux:**
+**On macOS/Linux:**
 ```bash
 ./gradlew :composeApp:assembleDebug
 ```
 
-**En Windows:**
+**On Windows:**
 ```bash
 .\gradlew.bat :composeApp:assembleDebug
 ```
 
-Para instalar directamente en un dispositivo conectado:
+To install directly on a connected device:
 ```bash
 ./gradlew :composeApp:installDebug
 ```
 
 ####  Desktop (JVM)
 
-**En macOS/Linux:**
+**On macOS/Linux:**
 ```bash
 ./gradlew :composeApp:run
 ```
 
-**En Windows:**
+**On Windows:**
 ```bash
 .\gradlew.bat :composeApp:run
 ```
 
-##  Estructura del Proyecto
+##  Project Structure
 
 ```
 App-Prototipe-Creator/
@@ -142,149 +179,203 @@ App-Prototipe-Creator/
 │   └── src/
 │       ├── commonMain/kotlin/
 │       │   └── app/prototype/creator/
-│       │       ├── App.kt                    # Punto de entrada principal
+│       │       ├── App.kt                    # Main entry point
 │       │       ├── screens/
-│       │       │   ├── GalleryScreen.kt     # Galería de prototipos
-│       │       │   ├── ChatScreen.kt        # Chat con IA
-│       │       │   └── PrototypeDetail.kt   # Detalles del prototipo
+│       │       │   ├── GalleryScreen.kt     # Prototype gallery
+│       │       │   ├── ChatScreen.kt        # AI chat
+│       │       │   └── PrototypeDetail.kt   # Prototype details
 │       │       ├── ui/
-│       │       │   ├── theme/               # Temas y estilos
-│       │       │   └── navigation/          # Navegación
+│       │       │   ├── theme/               # Themes and styles
+│       │       │   └── navigation/          # Navigation
 │       │       ├── data/
-│       │       │   ├── model/               # Modelos de datos
-│       │       │   ├── repository/          # Repositorios
-│       │       │   ├── service/             # Servicios (Supabase)
-│       │       │   └── i18n/                # Internacionalización
-│       │       └── di/                      # Inyección de dependencias
+│       │       │   ├── model/               # Data models
+│       │       │   ├── repository/          # Repositories
+│       │       │   ├── service/             # Services
+│       │       │   └── i18n/                # Internationalization
+│       │       └── di/                      # Dependency injection
 │       ├── androidMain/
 │       │   └── kotlin/
 │       │       └── MainActivity.kt
 │       └── jvmMain/
 │           └── kotlin/
-│               └── Main.kt                   # Punto de entrada Desktop
-├── .env                                      # Variables de entorno (no subir a git)
+│               └── Main.kt                   # Desktop entry point
+├── .env                                      # Environment variables (do not commit)
 ├── build.gradle.kts
 └── README.md
 ```
 
-##  Guía de Uso
+##  Usage Guide
 
-### Flujo de Trabajo
+### Workflow
 
-1. **Inicio en Galería**
-  - Al abrir la app, verás la galería con todos tus prototipos guardados
-  - Puedes navegar entre prototipos o crear uno nuevo
+1. **Start in Gallery**
+  - When opening the app, you'll see the gallery with all your saved prototypes
+  - You can navigate between prototypes or create a new one
 
-2. **Crear Nuevo Prototipo**
-  - Accede al **ChatScreen** desde la galería
-  - Describe tu idea de aplicación de forma conversacional
-  - La IA procesará tu descripción y generará un prototipo detallado
+2. **Create New Prototype**
+  - Access **ChatScreen** from the gallery
+  - Describe your application idea conversationally
+  - The AI will process your description and generate a detailed prototype
 
-3. **Visualizar y Exportar**
-  - Selecciona cualquier prototipo de la galería
-  - Visualiza todos los detalles en **PrototypeDetailScreen**
-  - Exporta el prototipo en el formato deseado
+3. **View and Export**
+  - Select any prototype from the gallery
+  - View all details in **PrototypeDetailScreen**
+  - Export the prototype in your desired format
 
-### Características del Sistema
+### System Features
 
-- **Gestión de Estado**: Utiliza `remember` y `mutableStateOf` para mantener el estado entre navegaciones
-- **Caché de Prototipos**: La galería mantiene los prototipos en caché para mejor rendimiento
-- **Sistema de Versiones**: Forzar recreación de vistas cuando sea necesario
-- **Navegación Type-Safe**: Sistema de navegación con rutas tipadas
+- **State Management**: Uses `remember` and `mutableStateOf` to maintain state between navigations
+- **Prototype Cache**: Gallery maintains prototypes in cache for better performance
+- **Version System**: Force view recreation when necessary
+- **Type-Safe Navigation**: Navigation system with typed routes
 
-##  Componentes Clave
+##  Key Components
 
 ### AppSettings
-Gestiona configuraciones globales de la aplicación:
-- **Tema**: Modo claro/oscuro
-- **Idioma**: Sistema multiidioma con soporte para español por defecto
-- **Configuración persistente**: Las preferencias se mantienen entre sesiones
+Manages global application settings:
+- **Theme**: Light/dark mode
+- **Language**: Multilingual system with Spanish as default
+- **Persistent Configuration**: Preferences are maintained between sessions
 
-### Repositorios
-- **PrototypeRepository**: Gestión de prototipos (CRUD)
-- **ChatRepository**: Manejo de conversaciones con IA
-- **LanguageRepository**: Gestión de idiomas y traducciones
+### Repositories
+- **PrototypeRepository**: Prototype management (CRUD) with SQLDelight
+- **ChatRepository**: AI conversation handling
+- **LanguageRepository**: Language and translation management with reactive StateFlow
 
-### Servicios
-- **SupabaseService**: Conexión con backend de Supabase para persistencia
+### Services
+- **MultiProviderAIService**: Integration with OpenAI, Anthropic, and Google Gemini
+- **ExportService**: Export to HTML and PDF
+  - **PlatformExporter**: Platform-specific implementations
+- **StoragePreferences**: Secure storage for configuration and API keys
 
-##  Internacionalización
+##  Internationalization
 
-El proyecto incluye un sistema completo de i18n con soporte para múltiples idiomas:
+The project includes a complete i18n system with support for multiple languages:
 
 ```kotlin
-// Uso de strings localizados
+// Using localized strings
 Text(Strings.initializingApp.localized(currentLanguage))
 ```
 
-Idioma por defecto: **Español (es)**
+Default language: **Spanish (es)**
 
-##  Manejo de Errores
+##  Error Handling
 
-La aplicación incluye un sistema robusto de manejo de errores:
+The application includes a robust error handling system:
 
-- **LoadingScreen**: Pantalla de carga durante inicialización
-- **ErrorScreen**: Pantalla de error con opción de reintentar
-- **Logging**: Sistema de logs con Napier para debugging
-- **Validación de Servicios**: Verificación de que todos los servicios estén inicializados correctamente
+- **LoadingScreen**: Loading screen during initialization
+- **ErrorScreen**: Error screen with retry option
+- **Logging**: Logging system with Napier for debugging
+- **Service Validation**: Verification that all services are properly initialized
 
-##  Seguridad
+##  Security
 
-- Las claves API se gestionan mediante variables de entorno
-- No se incluyen credenciales en el código fuente
-- El archivo `.env` está en `.gitignore`
+### API Keys Storage
+- **Desktop**: Java Preferences API (OS-level protection)
+  - Windows: Windows Registry
+  - macOS: ~/Library/Preferences
+  - Linux: ~/.java/.userPrefs
+- **Android**: EncryptedSharedPreferences with AES256-GCM
+  - MasterKey in Android Keystore
+  - Hardware-backed when available
 
+### Screen Protection (Android)
+- **FLAG_SECURE**: Prevents screenshots and screen recording
+- **setRecentsScreenshotEnabled(false)**: Hides content in recents (Android 13+)
+- **TaskDescription**: Black screen in recents
 
-##  Características Técnicas Avanzadas
+### Communication
+- **Direct HTTPS** with AI providers
+- **No intermediate backend**: API keys are never sent to our servers
+- Keys are stored **only on your device**
 
-- **Inyección de Dependencias**: Uso de Koin para un código limpio y testeable
-- **Composición**: Uso de `CompositionLocalProvider` para estado global
-- **Lazy Initialization**: Componentes se inicializan solo cuando son necesarios
-- **State Management**: Gestión reactiva del estado con StateFlow y MutableState
-- **Error Boundaries**: Manejo elegante de errores en toda la app
+##  Advanced Technical Features
 
-##  Licencia
+- **Clean Architecture**: Separation into UI, Data, and Domain layers
+- **Dependency Injection**: Koin with platform-specific modules
+- **Expect/Actual Pattern**: Platform-specific code with common interfaces
+- **State Management**: StateFlow for reactive state, MutableState for UI
+- **Coroutines**: Asynchronous programming with appropriate Dispatchers
+- **Cross-Platform WebView**: 
+  - Desktop: JavaFX WebView with separate windows
+  - Android: Android WebView with inline rendering
+- **Cross-Platform Export**:
+  - Desktop: JFileChooser with native dialogs
+  - Android: Direct save to Downloads with timestamps
+- **Optimized System Prompt**: 195 lines of instructions to avoid loops and improve quality
 
-Este proyecto está bajo la Licencia MIT.
+##  License
 
-##  Autor
+This project is under the MIT License.
+
+##  Author
 
 **Slenderman1314**
 - GitHub: [@Slenderman1314](https://github.com/Slenderman1314)
 
-##  Recursos y Documentación
+##  Resources & Documentation
 
-- [Kotlin Multiplatform Docs](https://www.jetbrains.com/help/kotlin-multiplatform-dev/get-started.html)
+### Project Documentation
+- [Complete Technical Documentation](./Docs/App-Prototipe-Creator-Docs/)
+  - Architecture and layers
+  - Screen guides
+  - AI APIs integration
+  - Export system
+  - Platforms (Desktop, Android, future)
+  - i18n system
+  - Changelog
+
+### Technologies
+- [Kotlin Multiplatform](https://www.jetbrains.com/help/kotlin-multiplatform-dev/get-started.html)
 - [Compose Multiplatform](https://www.jetbrains.com/lp/compose-multiplatform/)
-- [Supabase Documentation](https://supabase.com/docs)
-- [Koin Documentation](https://insert-koin.io/)
+- [SQLDelight](https://cashapp.github.io/sqldelight/)
+- [Koin](https://insert-koin.io/)
+- [Ktor](https://ktor.io/)
+- [iText 7](https://itextpdf.com/)
 - [Material Design 3](https://m3.material.io/)
+
+### AI APIs
+- [OpenAI Platform](https://platform.openai.com/docs)
+- [Anthropic Claude](https://docs.anthropic.com/)
+- [Google Gemini](https://ai.google.dev/)
 
 ##  Troubleshooting
 
-### La app no inicia en Desktop
-- Verifica que el archivo `.env` esté en la ubicación correcta
-- Revisa los logs en consola con `Napier`
-- Asegúrate de tener Java 17 o superior
+### App doesn't start on Desktop
+- Make sure you have JDK 17 or higher
+- Verify that JavaFX is available (included in JDK)
+- Check console logs with `Napier`
+- Clean and rebuild: `./gradlew clean build`
 
-### Errores de inicialización de servicios
-- Confirma que las variables de entorno estén configuradas correctamente
-- Verifica la conectividad con Supabase
-- Revisa los logs para identificar qué servicio falla
+### WebView doesn't render prototypes
+- **Desktop**: Verify that JavaFX WebView is working
+- **Android**: Make sure JavaScript is enabled
+- Check logs for rendering errors
 
-### Problemas de compilación
+### Export doesn't work (Android)
+- Verify that `PlatformExporter.context` is initialized
+- Check storage permissions (Android 12 and earlier)
+- Verify that Downloads directory is accessible
+
+### API Key doesn't work
+- Verify that the key is valid in the provider console
+- Make sure you've selected the correct provider
+- Check that you have available credits/quota
+- Review logs to see the specific API error
+
+### Build issues
 ```bash
-# Limpia el proyecto
+# Clean the project
 ./gradlew clean
 
-# Reconstruye
+# Rebuild
 ./gradlew build
 ```
 
-##  Reportar Problemas
+##  Report Issues
 
-Si encuentras algún bug o tienes sugerencias:
-1. Abre un [issue](https://github.com/Slenderman1314/App-Prototipe-Creator/issues)
-2. Describe el problema detalladamente
-3. Incluye logs si es posible
-4. Especifica la plataforma (Android/Desktop)
+If you find any bugs or have suggestions:
+1. Open an [issue](https://github.com/Slenderman1314/App-Prototipe-Creator/issues)
+2. Describe the problem in detail
+3. Include logs if possible
+4. Specify the platform (Android/Desktop)

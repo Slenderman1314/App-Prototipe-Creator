@@ -408,7 +408,7 @@ fun ChatScreen(
             // Typing indicator
             if (isLoading) {
                 item {
-                    TypingIndicator()
+                    TypingIndicator(currentLanguage)
                 }
             }
         }
@@ -627,7 +627,7 @@ private fun MessageBubble(
 }
 
 @Composable
-private fun TypingIndicator() {
+private fun TypingIndicator(currentLanguage: app.prototype.creator.data.model.Language) {
     Box(
         modifier = Modifier
             .fillMaxWidth()

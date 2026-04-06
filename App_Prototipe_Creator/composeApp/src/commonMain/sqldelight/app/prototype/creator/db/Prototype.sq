@@ -10,8 +10,11 @@ CREATE TABLE Prototype (
     tags TEXT NOT NULL DEFAULT '',
     isFavorite INTEGER NOT NULL DEFAULT 0,
     userIdea TEXT,
-    validationNotes TEXT
+
+    validationNotes TEXT,
+    language TEXT NOT NULL DEFAULT 'es'
 );
+
 
 -- Índices para mejorar performance
 CREATE INDEX prototype_updatedAt ON Prototype(updatedAt);
@@ -35,9 +38,9 @@ SELECT * FROM Prototype WHERE name LIKE '%' || ? || '%' ORDER BY updatedAt DESC;
 insert:
 INSERT OR REPLACE INTO Prototype(
     id, name, description, previewUrl, htmlContent, 
-    createdAt, updatedAt, tags, isFavorite, userIdea, validationNotes
+    createdAt, updatedAt, tags, isFavorite, userIdea, validationNotes, language
 )
-VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?);
+VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?);
 
 update:
 UPDATE Prototype 
@@ -49,7 +52,8 @@ SET name = ?,
     tags = ?,
     isFavorite = ?,
     userIdea = ?,
-    validationNotes = ?
+    validationNotes = ?,
+    language = ?
 WHERE id = ?;
 
 updateFavorite:

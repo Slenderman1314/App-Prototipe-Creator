@@ -1,8 +1,10 @@
 package app.prototype.creator.screens
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.Chat
 import androidx.compose.material.icons.filled.Add
@@ -25,6 +27,7 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
@@ -773,30 +776,31 @@ private fun PrototypeItem(
         modifier = Modifier.fillMaxWidth(),
         elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
     ) {
-        Column(
-            modifier = Modifier.padding(16.dp)
-        ) {
-            Row(
-                verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.SpaceBetween,
-                modifier = Modifier.fillMaxWidth()
+        Box {
+            Column(
+                modifier = Modifier.padding(16.dp)
             ) {
-                Text(
-                    text = prototype.name,
-                    style = MaterialTheme.typography.titleMedium,
-                    maxLines = 1,
-                    overflow = TextOverflow.Ellipsis,
-                    modifier = Modifier.weight(1f)
-                )
-                
-                Row {
-                    IconButton(onClick = onFavoriteClick) {
-                        Icon(
-                            imageVector = if (prototype.isFavorite) Icons.Filled.Favorite else Icons.Outlined.FavoriteBorder,
-                            contentDescription = if (prototype.isFavorite) Strings.unfavorite.localized(currentLanguage) else Strings.favorite.localized(currentLanguage),
-                            tint = if (prototype.isFavorite) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.onSurfaceVariant
-                        )
-                    }
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    modifier = Modifier.fillMaxWidth()
+                ) {
+                    Text(
+                        text = prototype.name,
+                        style = MaterialTheme.typography.titleMedium,
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis,
+                        modifier = Modifier.weight(1f)
+                    )
+                    
+                    Row {
+                        IconButton(onClick = onFavoriteClick) {
+                            Icon(
+                                imageVector = if (prototype.isFavorite) Icons.Filled.Favorite else Icons.Outlined.FavoriteBorder,
+                                contentDescription = if (prototype.isFavorite) Strings.unfavorite.localized(currentLanguage) else Strings.favorite.localized(currentLanguage),
+                                tint = if (prototype.isFavorite) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.onSurfaceVariant
+                            )
+                        }
                     
                     IconButton(onClick = { showDetailsDialog = true }) {
                         Icon(
@@ -825,6 +829,40 @@ private fun PrototypeItem(
                 color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.6f)
             )
         }
+        
+        // Language Badge
+        Surface(
+            modifier = Modifier
+                .align(Alignment.TopEnd)
+                .padding(8.dp),
+            shape = RoundedCornerShape(12.dp),
+            color = when (prototype.language.lowercase()) {
+                "es" -> Color(0xFF4CAF50).copy(alpha = 0.15f)
+                "en" -> Color(0xFF2196F3).copy(alpha = 0.15f)
+                else -> MaterialTheme.colorScheme.secondaryContainer
+            },
+            border = BorderStroke(
+                width = 1.dp,
+                color = when (prototype.language.lowercase()) {
+                    "es" -> Color(0xFF4CAF50)
+                    "en" -> Color(0xFF2196F3)
+                    else -> MaterialTheme.colorScheme.secondary
+                }
+            )
+        ) {
+            Text(
+                text = prototype.language.uppercase(),
+                modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp),
+                style = MaterialTheme.typography.labelSmall,
+                fontWeight = androidx.compose.ui.text.font.FontWeight.Bold,
+                color = when (prototype.language.lowercase()) {
+                    "es" -> Color(0xFF2E7D32)
+                    "en" -> Color(0xFF1565C0)
+                    else -> MaterialTheme.colorScheme.onSecondaryContainer
+                }
+            )
+        }
+    }
     }
     
     // Diálogo de detalles
