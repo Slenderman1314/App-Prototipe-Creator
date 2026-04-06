@@ -15,7 +15,8 @@ data class Prototype(
     val tags: List<String>,
     val isFavorite: Boolean,
     val userIdea: String?,
-    val validationNotes: String?
+    val validationNotes: String?,
+    val language: String = "es"
 ) {
     val createdDate: String
         get() = createdAt.toString()

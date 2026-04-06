@@ -345,6 +345,154 @@ object Strings {
         Language.SPANISH to "Continuar",
         Language.ENGLISH to "Continue"
     )
+    
+    // API Keys Settings Screen
+    val apiKeysSettings = mapOf(
+        Language.SPANISH to "Configuración de API Keys",
+        Language.ENGLISH to "API Keys Settings"
+    )
+    
+    val clearAll = mapOf(
+        Language.SPANISH to "Eliminar todo",
+        Language.ENGLISH to "Clear all"
+    )
+    
+    val apiKeysSaved = mapOf(
+        Language.SPANISH to "API Keys guardadas correctamente",
+        Language.ENGLISH to "API Keys saved successfully"
+    )
+    
+    val importantInformation = mapOf(
+        Language.SPANISH to "Información Importante",
+        Language.ENGLISH to "Important Information"
+    )
+    
+    val apiKeysSecurityInfo = mapOf(
+        Language.SPANISH to "Tus API keys se almacenan solo en tu dispositivo y nunca se envían a nuestros servidores. Se usan únicamente para comunicarte directamente con el proveedor de IA.",
+        Language.ENGLISH to "Your API keys are stored only on your device and never sent to our servers. They are used only to communicate directly with the AI provider."
+    )
+    
+    val openAiSubtitle = mapOf(
+        Language.SPANISH to "GPT-4, GPT-4o - Mejor calidad",
+        Language.ENGLISH to "GPT-4, GPT-4o - Best quality"
+    )
+    
+    val anthropicSubtitle = mapOf(
+        Language.SPANISH to "Claude 3 - Excelente alternativa",
+        Language.ENGLISH to "Claude 3 - Excellent alternative"
+    )
+    
+    val googleSubtitle = mapOf(
+        Language.SPANISH to "Gemini - Gratis con límites",
+        Language.ENGLISH to "Gemini - Free with limits"
+    )
+    
+    val apiKey = mapOf(
+        Language.SPANISH to "API Key",
+        Language.ENGLISH to "API Key"
+    )
+    
+    val show = mapOf(
+        Language.SPANISH to "Mostrar",
+        Language.ENGLISH to "Show"
+    )
+    
+    val hide = mapOf(
+        Language.SPANISH to "Ocultar",
+        Language.ENGLISH to "Hide"
+    )
+    
+    val howToGetApiKey = mapOf(
+        Language.SPANISH to "¿Cómo obtener mi API key?",
+        Language.ENGLISH to "How to get my API key?"
+    )
+    
+    val saveApiKeys = mapOf(
+        Language.SPANISH to "Guardar API Keys",
+        Language.ENGLISH to "Save API Keys"
+    )
+    
+    val clearAllApiKeys = mapOf(
+        Language.SPANISH to "Eliminar todas las API Keys",
+        Language.ENGLISH to "Clear all API Keys"
+    )
+    
+    val clearAllApiKeysConfirmation = mapOf(
+        Language.SPANISH to "¿Estás seguro de que quieres eliminar todas las API keys? Esta acción no se puede deshacer.",
+        Language.ENGLISH to "Are you sure you want to clear all API keys? This action cannot be undone."
+    )
+    
+    val clear = mapOf(
+        Language.SPANISH to "Eliminar",
+        Language.ENGLISH to "Clear"
+    )
+    
+    val ok = mapOf(
+        Language.SPANISH to "OK",
+        Language.ENGLISH to "OK"
+    )
+    
+    // Chat Screen
+    val prototypeGenerated = mapOf(
+        Language.SPANISH to "✨ Prototipo generado",
+        Language.ENGLISH to "✨ Prototype generated"
+    )
+    
+    val tapToViewPrototype = mapOf(
+        Language.SPANISH to "Toca para ver el prototipo",
+        Language.ENGLISH to "Tap to view prototype"
+    )
+    
+    val writing = mapOf(
+        Language.SPANISH to "Escribiendo...",
+        Language.ENGLISH to "Writing..."
+    )
+    
+    val apiKeyNotConfigured = mapOf(
+        Language.SPANISH to "API key no configurada",
+        Language.ENGLISH to "API key not configured"
+    )
+    
+    val apiKeyConfigured = mapOf(
+        Language.SPANISH to "API key configurada",
+        Language.ENGLISH to "API key configured"
+    )
+    
+    // Gallery Screen - Additional
+    val configureApiKeys = mapOf(
+        Language.SPANISH to "Configurar API Keys",
+        Language.ENGLISH to "Configure API Keys"
+    )
+    
+    val appName = mapOf(
+        Language.SPANISH to "Nombre de la App",
+        Language.ENGLISH to "App Name"
+    )
+    
+    val userIdea = mapOf(
+        Language.SPANISH to "Idea del Usuario",
+        Language.ENGLISH to "User Idea"
+    )
+    
+    val validatedDescription = mapOf(
+        Language.SPANISH to "Descripción Validada",
+        Language.ENGLISH to "Validated Description"
+    )
+    
+    val validationNotes = mapOf(
+        Language.SPANISH to "Notas de Validación",
+        Language.ENGLISH to "Validation Notes"
+    )
+    
+    val creationDate = mapOf(
+        Language.SPANISH to "Fecha de Creación",
+        Language.ENGLISH to "Creation Date"
+    )
+    
+    val close = mapOf(
+        Language.SPANISH to "Cerrar",
+        Language.ENGLISH to "Close"
+    )
 }
 
 /**

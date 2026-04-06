@@ -6,6 +6,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Warning
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.compositionLocalOf
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.Alignment
@@ -18,6 +19,7 @@ import app.prototype.creator.data.model.Language
 import app.prototype.creator.data.repository.ChatRepository
 import app.prototype.creator.data.repository.LanguageRepository
 import app.prototype.creator.data.repository.PrototypeRepository
+import app.prototype.creator.ui.components.BackendSelectorDialog
 import app.prototype.creator.ui.components.StorageSelectionDialog
 import app.prototype.creator.ui.theme.AppTheme
 import app.prototype.creator.utils.StoragePreferences
@@ -31,6 +33,7 @@ import org.koin.compose.koinInject
 sealed class Screen(val route: String) {
     object Gallery : Screen("gallery")
     object Chat : Screen("chat")
+    object ApiKeysSettings : Screen("api_keys_settings")
     object PrototypeDetail : Screen("prototype/{prototypeId}") {
         fun createRoute(prototypeId: String) = "prototype/$prototypeId"
     }
@@ -84,6 +87,7 @@ private fun AppContent() {
     val isStorageConfigured = remember { storagePreferences.isStorageConfigured() }
     var showStorageDialog by remember { mutableStateOf(!isStorageConfigured) }
     var storageMode by remember { mutableStateOf(storagePreferences.getStorageMode()) }
+    var showBackendDialog by remember { mutableStateOf(false) }
     
     Napier.d("🔍 Storage configured: $isStorageConfigured, Show dialog: $showStorageDialog")
     
@@ -283,7 +287,10 @@ private fun MainAppContent(
     // Storage settings dialog state
     val storagePreferences = koinInject<StoragePreferences>()
     var showStorageSettingsDialog by remember { mutableStateOf(false) }
-
+    
+    // Get language repository for dialogs
+    val languageRepository = koinInject<LanguageRepository>()
+    val currentLanguage by languageRepository.currentLanguage.collectAsState()
     
     // Show storage settings dialog when requested
     if (showStorageSettingsDialog) {
@@ -325,7 +332,10 @@ private fun MainAppContent(
                     },
                     onStorageSettingsClick = {
                         showStorageSettingsDialog = true
-                        Napier.d("💾 Storage settings button clicked")
+                        Napier.d("Storage settings button clicked")
+                    },
+                    onApiKeysSettingsClick = {
+                        currentScreen = Screen.ApiKeysSettings
                     }
                 )
             }
@@ -340,6 +350,15 @@ private fun MainAppContent(
                         prototypeVersion++ // Increment version to force recreation
                         currentScreen = Screen.PrototypeDetail
                     }
+                )
+            }
+            is Screen.ApiKeysSettings -> {
+                println("🖥️ APP.KT: Rendering ApiKeysSettingsScreen")
+                @Suppress("ClassName")
+                app.prototype.creator.screens.ApiKeysSettingsScreen(
+                    currentLanguage = languageRepository.currentLanguage.collectAsState().value,
+                    storagePreferences = org.koin.compose.koinInject(),
+                    onNavigateBack = { currentScreen = Screen.Gallery }
                 )
             }
             is Screen.PrototypeDetail -> {
