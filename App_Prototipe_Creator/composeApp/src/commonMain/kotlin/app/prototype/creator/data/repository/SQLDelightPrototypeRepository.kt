@@ -55,12 +55,13 @@ class SQLDelightPrototypeRepository(
                     description = prototype.description,
                     previewUrl = prototype.previewUrl,
                     htmlContent = prototype.htmlContent,
-                    createdAt = prototype.createdAt,
+                    createdAt = System.currentTimeMillis(),
                     updatedAt = System.currentTimeMillis(),
                     tags = prototype.tags.joinToString(","),
                     isFavorite = if (prototype.isFavorite) 1L else 0L,
                     userIdea = prototype.userIdea,
-                    validationNotes = prototype.validationNotes
+                    validationNotes = prototype.validationNotes,
+                    language = prototype.language
                 )
                 Napier.d("✅ Prototype created: ${prototype.name}")
             } catch (e: Exception) {
@@ -83,6 +84,7 @@ class SQLDelightPrototypeRepository(
                     isFavorite = if (prototype.isFavorite) 1L else 0L,
                     userIdea = prototype.userIdea,
                     validationNotes = prototype.validationNotes,
+                    language = prototype.language,
                     id = prototype.id
                 )
                 Napier.d("✅ Prototype updated: ${prototype.name}")
@@ -172,6 +174,7 @@ private fun app.prototype.creator.db.Prototype.toDomain(): Prototype {
         tags = if (tags.isBlank()) emptyList() else tags.split(","),
         isFavorite = isFavorite == 1L,
         userIdea = userIdea,
-        validationNotes = validationNotes
+        validationNotes = validationNotes,
+        language = language
     )
 }

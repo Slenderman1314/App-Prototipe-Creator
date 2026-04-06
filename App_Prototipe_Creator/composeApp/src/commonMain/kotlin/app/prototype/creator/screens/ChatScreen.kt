@@ -8,8 +8,11 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowForward
 import androidx.compose.material.icons.filled.ArrowBack
+import androidx.compose.material.icons.filled.ArrowDropDown
 import androidx.compose.material.icons.filled.Check
+import androidx.compose.material.icons.filled.CheckCircle
 import androidx.compose.material.icons.filled.Send
+import androidx.compose.material.icons.filled.Warning
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -21,6 +24,7 @@ import app.prototype.creator.data.model.ChatMessage
 import app.prototype.creator.data.repository.ChatRepository
 import app.prototype.creator.data.repository.LanguageRepository
 import app.prototype.creator.data.service.AiService
+import app.prototype.creator.utils.StoragePreferences
 import io.github.aakira.napier.Napier
 import kotlinx.coroutines.launch
 
@@ -34,7 +38,10 @@ fun ChatScreen(
     val chatRepository = org.koin.compose.koinInject<ChatRepository>()
     val aiService = org.koin.compose.koinInject<AiService>()
     val languageRepository = org.koin.compose.koinInject<LanguageRepository>()
+    val storagePreferences = org.koin.compose.koinInject<StoragePreferences>()
     val currentLanguage by languageRepository.currentLanguage.collectAsState()
+    
+    var showProviderMenu by remember { mutableStateOf(false) }
     
     var messageText by remember { mutableStateOf("") }
     val messages = remember { mutableStateListOf<ChatMessage>() }
@@ -66,6 +73,165 @@ fun ChatScreen(
                 navigationIcon = {
                     IconButton(onClick = onBack) {
                         Icon(Icons.Default.ArrowBack, contentDescription = Strings.back.localized(currentLanguage))
+                    }
+                },
+                actions = {
+                    // Provider selector dropdown
+                    Box {
+                        TextButton(
+                            onClick = { showProviderMenu = true },
+                            colors = ButtonDefaults.textButtonColors(
+                                contentColor = MaterialTheme.colorScheme.onSurface
+                            )
+                        ) {
+                            Text(
+                                text = when (storagePreferences.getAiProvider()) {
+                                    StoragePreferences.PROVIDER_OPENAI -> "OpenAI"
+                                    StoragePreferences.PROVIDER_ANTHROPIC -> "Anthropic"
+                                    StoragePreferences.PROVIDER_GOOGLE -> "Google"
+                                    StoragePreferences.PROVIDER_N8N -> "n8n"
+                                    else -> "OpenAI"
+                                },
+                                style = MaterialTheme.typography.labelLarge
+                            )
+                            Icon(
+                                imageVector = Icons.Default.ArrowDropDown,
+                                contentDescription = null,
+                                modifier = Modifier.size(20.dp)
+                            )
+                        }
+                        
+                        DropdownMenu(
+                            expanded = showProviderMenu,
+                            onDismissRequest = { showProviderMenu = false }
+                        ) {
+                            DropdownMenuItem(
+                                text = {
+                                    Row(
+                                        horizontalArrangement = Arrangement.spacedBy(8.dp),
+                                        verticalAlignment = Alignment.CenterVertically
+                                    ) {
+                                        Text(
+                                            text = "OpenAI",
+                                            color = if (storagePreferences.getOpenAiApiKey().isNullOrBlank()) 
+                                                MaterialTheme.colorScheme.onSurface.copy(alpha = 0.38f)
+                                            else 
+                                                MaterialTheme.colorScheme.onSurface
+                                        )
+                                        if (!storagePreferences.getOpenAiApiKey().isNullOrBlank()) {
+                                            Icon(
+                                                imageVector = Icons.Default.CheckCircle,
+                                                contentDescription = null,
+                                                tint = MaterialTheme.colorScheme.primary,
+                                                modifier = Modifier.size(16.dp)
+                                            )
+                                        } else {
+                                            Icon(
+                                                imageVector = Icons.Default.Warning,
+                                                contentDescription = null,
+                                                tint = MaterialTheme.colorScheme.error,
+                                                modifier = Modifier.size(16.dp)
+                                            )
+                                        }
+                                    }
+                                },
+                                onClick = {
+                                    storagePreferences.setAiProvider(StoragePreferences.PROVIDER_OPENAI)
+                                    showProviderMenu = false
+                                    Napier.d("Provider changed to OpenAI")
+                                },
+                                enabled = !storagePreferences.getOpenAiApiKey().isNullOrBlank(),
+                                trailingIcon = {
+                                    if (storagePreferences.getAiProvider() == StoragePreferences.PROVIDER_OPENAI) {
+                                        Icon(Icons.Default.Check, contentDescription = null)
+                                    }
+                                }
+                            )
+                            DropdownMenuItem(
+                                text = {
+                                    Row(
+                                        horizontalArrangement = Arrangement.spacedBy(8.dp),
+                                        verticalAlignment = Alignment.CenterVertically
+                                    ) {
+                                        Text(
+                                            text = "Anthropic",
+                                            color = if (storagePreferences.getAnthropicApiKey().isNullOrBlank()) 
+                                                MaterialTheme.colorScheme.onSurface.copy(alpha = 0.38f)
+                                            else 
+                                                MaterialTheme.colorScheme.onSurface
+                                        )
+                                        if (!storagePreferences.getAnthropicApiKey().isNullOrBlank()) {
+                                            Icon(
+                                                imageVector = Icons.Default.CheckCircle,
+                                                contentDescription = null,
+                                                tint = MaterialTheme.colorScheme.primary,
+                                                modifier = Modifier.size(16.dp)
+                                            )
+                                        } else {
+                                            Icon(
+                                                imageVector = Icons.Default.Warning,
+                                                contentDescription = null,
+                                                tint = MaterialTheme.colorScheme.error,
+                                                modifier = Modifier.size(16.dp)
+                                            )
+                                        }
+                                    }
+                                },
+                                onClick = {
+                                    storagePreferences.setAiProvider(StoragePreferences.PROVIDER_ANTHROPIC)
+                                    showProviderMenu = false
+                                    Napier.d("Provider changed to Anthropic")
+                                },
+                                enabled = !storagePreferences.getAnthropicApiKey().isNullOrBlank(),
+                                trailingIcon = {
+                                    if (storagePreferences.getAiProvider() == StoragePreferences.PROVIDER_ANTHROPIC) {
+                                        Icon(Icons.Default.Check, contentDescription = null)
+                                    }
+                                }
+                            )
+                            DropdownMenuItem(
+                                text = {
+                                    Row(
+                                        horizontalArrangement = Arrangement.spacedBy(8.dp),
+                                        verticalAlignment = Alignment.CenterVertically
+                                    ) {
+                                        Text(
+                                            text = "Google",
+                                            color = if (storagePreferences.getGoogleApiKey().isNullOrBlank()) 
+                                                MaterialTheme.colorScheme.onSurface.copy(alpha = 0.38f)
+                                            else 
+                                                MaterialTheme.colorScheme.onSurface
+                                        )
+                                        if (!storagePreferences.getGoogleApiKey().isNullOrBlank()) {
+                                            Icon(
+                                                imageVector = Icons.Default.CheckCircle,
+                                                contentDescription = null,
+                                                tint = MaterialTheme.colorScheme.primary,
+                                                modifier = Modifier.size(16.dp)
+                                            )
+                                        } else {
+                                            Icon(
+                                                imageVector = Icons.Default.Warning,
+                                                contentDescription = null,
+                                                tint = MaterialTheme.colorScheme.error,
+                                                modifier = Modifier.size(16.dp)
+                                            )
+                                        }
+                                    }
+                                },
+                                onClick = {
+                                    storagePreferences.setAiProvider(StoragePreferences.PROVIDER_GOOGLE)
+                                    showProviderMenu = false
+                                    Napier.d("Provider changed to Google")
+                                },
+                                enabled = !storagePreferences.getGoogleApiKey().isNullOrBlank(),
+                                trailingIcon = {
+                                    if (storagePreferences.getAiProvider() == StoragePreferences.PROVIDER_GOOGLE) {
+                                        Icon(Icons.Default.Check, contentDescription = null)
+                                    }
+                                }
+                            )
+                        }
                     }
                 }
             )
@@ -242,7 +408,7 @@ fun ChatScreen(
             // Typing indicator
             if (isLoading) {
                 item {
-                    TypingIndicator()
+                    TypingIndicator(currentLanguage)
                 }
             }
         }
@@ -342,12 +508,12 @@ private fun MessageBubble(
                         )
                         Column(modifier = Modifier.weight(1f)) {
                             Text(
-                                text = "✨ Prototipo generado",
+                                text = Strings.prototypeGenerated.localized(currentLanguage),
                                 style = MaterialTheme.typography.titleMedium,
                                 color = MaterialTheme.colorScheme.onPrimaryContainer
                             )
                             Text(
-                                text = "Toca para ver el prototipo",
+                                text = Strings.tapToViewPrototype.localized(currentLanguage),
                                 style = MaterialTheme.typography.bodySmall,
                                 color = MaterialTheme.colorScheme.onPrimaryContainer.copy(alpha = 0.7f)
                             )
@@ -461,7 +627,7 @@ private fun MessageBubble(
 }
 
 @Composable
-private fun TypingIndicator() {
+private fun TypingIndicator(currentLanguage: app.prototype.creator.data.model.Language) {
     Box(
         modifier = Modifier
             .fillMaxWidth()
@@ -484,7 +650,7 @@ private fun TypingIndicator() {
                     color = MaterialTheme.colorScheme.primary
                 )
                 Text(
-                    text = "Escribiendo...",
+                    text = Strings.writing.localized(currentLanguage),
                     style = MaterialTheme.typography.bodyMedium,
                     color = MaterialTheme.colorScheme.onSurfaceVariant
                 )

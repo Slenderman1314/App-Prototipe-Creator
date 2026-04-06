@@ -63,14 +63,6 @@ object Config {
     val n8nWebhookPath: String = getRequiredProperty("N8N_WEBHOOK_PATH", "webhook/placeholder")
     val n8nApiKey: String? = getEnvironmentProperty("N8N_API_KEY")?.takeIf { it.isNotBlank() }
     
-    // Backend Type Selection (N8N or SPRING_BOOT)
-    val aiBackendType: String = getEnvironmentProperty("AI_BACKEND_TYPE")?.uppercase() ?: "N8N"
-    
-    // Spring Boot AI configuration
-    val springBootBaseUrl: String = getEnvironmentProperty("SPRING_BOOT_BASE_URL") 
-        ?: "http://localhost:8080"
-    val springBootApiKey: String? = getEnvironmentProperty("SPRING_BOOT_API_KEY")?.takeIf { it.isNotBlank() }
-    
     // Firebase configuration
     val firebaseProjectId: String = getEnvironmentProperty("FIREBASE_PROJECT_ID")?.takeIf { it.isNotBlank() } ?: ""
     val firebaseApiKey: String = getEnvironmentProperty("FIREBASE_API_KEY")?.takeIf { it.isNotBlank() } ?: ""
@@ -118,13 +110,6 @@ object Config {
     val defaultTheme: String = "system"
     val defaultLanguage: String = "es"
     
-    // Complete URLs for n8n endpoints
-    val n8nChatEndpoint: String
-        get() {
-            if (aiBackendType != "N8N") return ""
-            return "${n8nBaseUrl.trimEnd('/')}/${n8nWebhookPath.trimStart('/')}"
-        }
-    
     init {
         // Log configuration summary in debug mode
         if (DEBUG) {
@@ -135,12 +120,9 @@ object Config {
                 |DEBUG: $DEBUG
                 |API_URL: $API_URL
                 |API_TIMEOUT: $API_TIMEOUT ms
-                |AI_BACKEND_TYPE: $aiBackendType
                 |N8N_BASE_URL: ${if (!n8nBaseUrlEnv.isNullOrBlank()) "[SET]" else "[NOT SET]"}
                 |N8N_WEBHOOK_PATH: ${if (!n8nWebhookPathEnv.isNullOrBlank()) "[SET]" else "[NOT SET]"}
                 |N8N_API_KEY: ${if (n8nApiKey?.isNotBlank() == true) "[SET]" else "[NOT SET]"}
-                |SPRING_BOOT_BASE_URL: $springBootBaseUrl
-                |SPRING_BOOT_API_KEY: ${if (springBootApiKey?.isNotBlank() == true) "[SET]" else "[NOT SET]"}
                 |DATABASE_MODE: $databaseMode
                 |FIREBASE_PROJECT_ID: ${if (firebaseProjectId.isNotEmpty()) "[SET]" else "[NOT SET]"}
                 |FIREBASE_API_KEY: ${if (firebaseApiKey.isNotEmpty()) "[SET]" else "[NOT SET]"}
@@ -155,7 +137,7 @@ object Config {
             Napier.d(configSummary)
             
             // Check for default values that should be overridden
-            if (aiBackendType == "N8N" && (n8nBaseUrlEnv.isNullOrBlank() || n8nWebhookPathEnv.isNullOrBlank())) {
+            if (n8nBaseUrlEnv.isNullOrBlank() || n8nWebhookPathEnv.isNullOrBlank()) {
                 Napier.w("WARNING: Missing N8N configuration (N8N_BASE_URL / N8N_WEBHOOK_PATH). n8n backend will not work.")
             }
         }
