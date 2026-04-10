@@ -11,12 +11,15 @@ import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material.icons.filled.ArrowDropDown
 import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.CheckCircle
+import androidx.compose.material.icons.filled.Help
+import androidx.compose.material.icons.filled.Keyboard
 import androidx.compose.material.icons.filled.Send
 import androidx.compose.material.icons.filled.Warning
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.input.key.*
 import androidx.compose.ui.unit.dp
 import app.prototype.creator.data.i18n.Strings
 import app.prototype.creator.data.i18n.localized
@@ -42,6 +45,7 @@ fun ChatScreen(
     val currentLanguage by languageRepository.currentLanguage.collectAsState()
     
     var showProviderMenu by remember { mutableStateOf(false) }
+    var showKeyboardHelp by remember { mutableStateOf(false) }
     
     var messageText by remember { mutableStateOf("") }
     val messages = remember { mutableStateListOf<ChatMessage>() }
@@ -51,6 +55,70 @@ fun ChatScreen(
     
     // Create a chat session
     val chatId = remember { "chat_${System.currentTimeMillis()}" }
+    
+    // Function to send message
+    val sendMessage: () -> Unit = {
+        if (messageText.isNotBlank() && !isLoading) {
+            val userMessage = messageText
+            messageText = ""
+            
+            // Add user message
+            val userChatMessage = ChatMessage.create(
+                content = userMessage,
+                isFromUser = true
+            )
+            messages.add(userChatMessage)
+            
+            // Send to AI
+            scope.launch {
+                isLoading = true
+                try {
+                    chatRepository.sendMessage(chatId, userChatMessage)
+                    val result = aiService.sendMessage(messages.toList())
+                    
+                    result.fold(
+                        onSuccess = { response ->
+                            val cleanedResponse = response
+                                .replace("\\n", "\n")
+                                .replace("\\\"", "\"")
+                                .replace("\\t", "\t")
+                                .replace("\\\\", "\\")
+                                .replace("\\r", "")
+                                .replace("\\", "")
+                                .trim()
+                            
+                            val aiMessage = ChatMessage.create(
+                                content = cleanedResponse,
+                                isFromUser = false
+                            )
+                            messages.add(aiMessage)
+                            chatRepository.sendMessage(chatId, aiMessage)
+                            listState.animateScrollToItem(messages.size - 1)
+                        },
+                        onFailure = { error ->
+                            Napier.e("Error sending message to AI", error)
+                            val errorMessage = ChatMessage.create(
+                                content = "Error: ${error.message ?: "No se pudo conectar con el servicio de IA"}",
+                                isFromUser = false,
+                                isError = true
+                            )
+                            messages.add(errorMessage)
+                        }
+                    )
+                } catch (e: Exception) {
+                    Napier.e("Exception in chat", e)
+                    val errorMessage = ChatMessage.create(
+                        content = "Error: ${e.message ?: "Error desconocido"}",
+                        isFromUser = false,
+                        isError = true
+                    )
+                    messages.add(errorMessage)
+                } finally {
+                    isLoading = false
+                }
+            }
+        }
+    }
     
     // Add welcome message - update when language changes
     LaunchedEffect(currentLanguage) {
@@ -252,81 +320,48 @@ fun ChatScreen(
                         onValueChange = { messageText = it },
                         modifier = Modifier
                             .weight(1f)
-                            .padding(end = 8.dp),
+                            .padding(end = 8.dp)
+                            .onKeyEvent { keyEvent ->
+                                if (keyEvent.type == KeyEventType.KeyDown) {
+                                    when {
+                                        // Enter sin modificadores -> Enviar mensaje
+                                        keyEvent.key == Key.Enter && !keyEvent.isShiftPressed && !keyEvent.isCtrlPressed -> {
+                                            sendMessage()
+                                            true
+                                        }
+                                        // Shift + Enter -> Nueva línea (comportamiento por defecto)
+                                        keyEvent.key == Key.Enter && keyEvent.isShiftPressed -> {
+                                            false // Dejar que TextField maneje el salto de línea
+                                        }
+                                        // Ctrl/Cmd + K -> Limpiar chat
+                                        (keyEvent.isCtrlPressed || keyEvent.isMetaPressed) && keyEvent.key == Key.K -> {
+                                            messages.clear()
+                                            messages.add(
+                                                ChatMessage.create(
+                                                    content = Strings.chatWelcomeMessage.localized(currentLanguage),
+                                                    isFromUser = false
+                                                )
+                                            )
+                                            true
+                                        }
+                                        // Escape -> Limpiar campo de texto
+                                        keyEvent.key == Key.Escape -> {
+                                            messageText = ""
+                                            true
+                                        }
+                                        else -> false
+                                    }
+                                } else {
+                                    false
+                                }
+                            },
                         placeholder = { Text(Strings.typeMessage.localized(currentLanguage)) },
                         shape = RoundedCornerShape(24.dp),
                         enabled = !isLoading,
                         maxLines = 4
                     )
                     IconButton(
-                        onClick = {
-                            if (messageText.isNotBlank() && !isLoading) {
-                                val userMessage = messageText
-                                messageText = ""
-                                
-                                // Add user message
-                                val userChatMessage = ChatMessage.create(
-                                    content = userMessage,
-                                    isFromUser = true
-                                )
-                                messages.add(userChatMessage)
-                                
-                                // Send to AI
-                                scope.launch {
-                                    isLoading = true
-                                    try {
-                                        // Save user message
-                                        chatRepository.sendMessage(chatId, userChatMessage)
-                                        
-                                        // Send to AI service (n8n)
-                                        val result = aiService.sendMessage(messages.toList())
-                                        
-                                        result.fold(
-                                            onSuccess = { response ->
-                                                // Limpiar barras invertidas escapadas y otros caracteres
-                                                val cleanedResponse = response
-                                                    .replace("\\n", "\n")
-                                                    .replace("\\\"", "\"")
-                                                    .replace("\\t", "\t")
-                                                    .replace("\\\\", "\\")
-                                                    .replace("\\r", "")
-                                                    .replace("\\", "")  // Eliminar barras invertidas sueltas
-                                                    .trim()
-                                                
-                                                val aiMessage = ChatMessage.create(
-                                                    content = cleanedResponse,
-                                                    isFromUser = false
-                                                )
-                                                messages.add(aiMessage)
-                                                chatRepository.sendMessage(chatId, aiMessage)
-                                                
-                                                // Scroll to bottom
-                                                listState.animateScrollToItem(messages.size - 1)
-                                            },
-                                            onFailure = { error ->
-                                                Napier.e("Error sending message to AI", error)
-                                                val errorMessage = ChatMessage.create(
-                                                    content = "Error: ${error.message ?: "No se pudo conectar con el servicio de IA"}",
-                                                    isFromUser = false,
-                                                    isError = true
-                                                )
-                                                messages.add(errorMessage)
-                                            }
-                                        )
-                                    } catch (e: Exception) {
-                                        Napier.e("Exception in chat", e)
-                                        val errorMessage = ChatMessage.create(
-                                            content = "Error: ${e.message ?: "Error desconocido"}",
-                                            isFromUser = false,
-                                            isError = true
-                                        )
-                                        messages.add(errorMessage)
-                                    } finally {
-                                        isLoading = false
-                                    }
-                                }
-                            }
-                        },
+                        onClick = sendMessage,
                         modifier = Modifier.size(48.dp),
                         enabled = messageText.isNotBlank() && !isLoading
                     ) {
@@ -336,14 +371,15 @@ fun ChatScreen(
             }
         }
     ) { padding ->
-        LazyColumn(
-            state = listState,
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(padding),
-            contentPadding = PaddingValues(16.dp),
-            verticalArrangement = Arrangement.spacedBy(8.dp)
-        ) {
+        Box(modifier = Modifier.fillMaxSize()) {
+            LazyColumn(
+                state = listState,
+                modifier = Modifier
+                    .fillMaxSize()
+                    .padding(padding),
+                contentPadding = PaddingValues(16.dp),
+                verticalArrangement = Arrangement.spacedBy(8.dp)
+            ) {
             items(messages) { msg ->
                 MessageBubble(
                     message = msg,
@@ -412,6 +448,31 @@ fun ChatScreen(
                 }
             }
         }
+        
+        // Floating help button
+        FloatingActionButton(
+            onClick = { showKeyboardHelp = true },
+            modifier = Modifier
+                .align(Alignment.BottomEnd)
+                .padding(16.dp)
+                .padding(bottom = 80.dp), // Espacio para el bottomBar
+            containerColor = MaterialTheme.colorScheme.secondaryContainer,
+            contentColor = MaterialTheme.colorScheme.onSecondaryContainer
+        ) {
+            Icon(
+                imageVector = Icons.Default.Keyboard,
+                contentDescription = "Keyboard shortcuts"
+            )
+        }
+        
+        // Keyboard shortcuts dialog
+        if (showKeyboardHelp) {
+            KeyboardShortcutsDialog(
+                currentLanguage = currentLanguage,
+                onDismiss = { showKeyboardHelp = false }
+            )
+        }
+    }
     }
 }
 
@@ -655,6 +716,181 @@ private fun TypingIndicator(currentLanguage: app.prototype.creator.data.model.La
                     color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
             }
+        }
+    }
+}
+
+@Composable
+private fun KeyboardShortcutsDialog(
+    currentLanguage: app.prototype.creator.data.model.Language,
+    onDismiss: () -> Unit
+) {
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = {
+            Row(
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(8.dp)
+            ) {
+                Icon(
+                    imageVector = Icons.Default.Keyboard,
+                    contentDescription = null,
+                    tint = MaterialTheme.colorScheme.primary
+                )
+                Text(
+                    text = if (currentLanguage == app.prototype.creator.data.model.Language.SPANISH) 
+                        "Atajos de Teclado" 
+                    else 
+                        "Keyboard Shortcuts"
+                )
+            }
+        },
+        text = {
+            Column(
+                modifier = Modifier.fillMaxWidth(),
+                verticalArrangement = Arrangement.spacedBy(16.dp)
+            ) {
+                // Sección: Controles de Mensaje
+                Text(
+                    text = if (currentLanguage == app.prototype.creator.data.model.Language.SPANISH) 
+                        "Controles de Mensaje" 
+                    else 
+                        "Message Controls",
+                    style = MaterialTheme.typography.titleSmall,
+                    color = MaterialTheme.colorScheme.primary
+                )
+                
+                ShortcutItem(
+                    keys = "Enter",
+                    description = if (currentLanguage == app.prototype.creator.data.model.Language.SPANISH) 
+                        "Enviar mensaje" 
+                    else 
+                        "Send message"
+                )
+                
+                ShortcutItem(
+                    keys = "Shift + Enter",
+                    description = if (currentLanguage == app.prototype.creator.data.model.Language.SPANISH) 
+                        "Nueva línea" 
+                    else 
+                        "New line"
+                )
+                
+                ShortcutItem(
+                    keys = "Escape",
+                    description = if (currentLanguage == app.prototype.creator.data.model.Language.SPANISH) 
+                        "Limpiar campo de texto" 
+                    else 
+                        "Clear text field"
+                )
+                
+                Divider()
+                
+                // Sección: Gestión de Chat
+                Text(
+                    text = if (currentLanguage == app.prototype.creator.data.model.Language.SPANISH) 
+                        "Gestión de Chat" 
+                    else 
+                        "Chat Management",
+                    style = MaterialTheme.typography.titleSmall,
+                    color = MaterialTheme.colorScheme.primary
+                )
+                
+                ShortcutItem(
+                    keys = "Ctrl/Cmd + K",
+                    description = if (currentLanguage == app.prototype.creator.data.model.Language.SPANISH) 
+                        "Limpiar conversación" 
+                    else 
+                        "Clear conversation"
+                )
+                
+                Divider()
+                
+                // Sección: Formato de Mensajes
+                Text(
+                    text = if (currentLanguage == app.prototype.creator.data.model.Language.SPANISH) 
+                        "Formato de Mensajes" 
+                    else 
+                        "Message Format",
+                    style = MaterialTheme.typography.titleSmall,
+                    color = MaterialTheme.colorScheme.primary
+                )
+                
+                Surface(
+                    color = MaterialTheme.colorScheme.surfaceVariant,
+                    shape = RoundedCornerShape(8.dp)
+                ) {
+                    Column(
+                        modifier = Modifier.padding(12.dp),
+                        verticalArrangement = Arrangement.spacedBy(4.dp)
+                    ) {
+                        Text(
+                            text = if (currentLanguage == app.prototype.creator.data.model.Language.SPANISH) 
+                                "• Describe tu idea de app claramente" 
+                            else 
+                                "• Describe your app idea clearly",
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                        Text(
+                            text = if (currentLanguage == app.prototype.creator.data.model.Language.SPANISH) 
+                                "• Menciona funcionalidades clave" 
+                            else 
+                                "• Mention key features",
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                        Text(
+                            text = if (currentLanguage == app.prototype.creator.data.model.Language.SPANISH) 
+                                "• Responde preguntas específicamente" 
+                            else 
+                                "• Answer questions specifically",
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                    }
+                }
+            }
+        },
+        confirmButton = {
+            TextButton(onClick = onDismiss) {
+                Text(
+                    if (currentLanguage == app.prototype.creator.data.model.Language.SPANISH) 
+                        "Entendido" 
+                    else 
+                        "Got it"
+                )
+            }
+        }
+    )
+}
+
+@Composable
+private fun ShortcutItem(
+    keys: String,
+    description: String
+) {
+    Row(
+        modifier = Modifier.fillMaxWidth(),
+        horizontalArrangement = Arrangement.SpaceBetween,
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        Text(
+            text = description,
+            style = MaterialTheme.typography.bodyMedium,
+            modifier = Modifier.weight(1f)
+        )
+        Surface(
+            color = MaterialTheme.colorScheme.primaryContainer,
+            shape = RoundedCornerShape(6.dp)
+        ) {
+            Text(
+                text = keys,
+                modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp),
+                style = MaterialTheme.typography.labelSmall,
+                color = MaterialTheme.colorScheme.onPrimaryContainer,
+                fontWeight = androidx.compose.ui.text.font.FontWeight.Bold
+            )
         }
     }
 }
